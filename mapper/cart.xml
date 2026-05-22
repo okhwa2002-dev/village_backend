@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cart">
+
+  <select id="findByUserId">
+    SELECT id, user_id, created_at FROM carts WHERE user_id = #{userId}
+  </select>
+
+  <insert id="create">
+    INSERT INTO carts (user_id) VALUES (#{userId})
+    RETURNING id, user_id, created_at
+  </insert>
+
+  <select id="findItems">
+    SELECT ci.id, ci.cart_id, ci.product_id, ci.quantity,
+           p.name AS product_name, p.price, p.stock, p.images, p.status AS product_status,
+           fp.name AS farmer_name
+    FROM cart_items ci
+    JOIN products p ON p.id = ci.product_id
+    JOIN farmer_profiles fp ON fp.id = p.farmer_id
+    WHERE ci.cart_id = #{cartId}
+    ORDER BY ci.id
+  </select>
+
+  <insert id="upsertItem">
+    INSERT INTO cart_items (cart_id, product_id, quantity)
+    VALUES (#{cartId}, #{productId}, #{quantity})
+    ON CONFLICT (cart_id, product_id)
+    DO UPDATE SET quantity = cart_items.quantity + #{quantity}
+    RETURNING id, cart_id, product_id, quantity
+  </insert>
+
+  <update id="updateItemQuantity">
+    UPDATE cart_items SET quantity = #{quantity}
+    WHERE id = #{itemId} AND cart_id = #{cartId}
+  </update>
+
+  <delete id="deleteItem">
+    DELETE FROM cart_items WHERE id = #{itemId} AND cart_id = #{cartId}
+  </delete>
+
+  <delete id="clearItems">
+    DELETE FROM cart_items WHERE cart_id = #{cartId}
+  </delete>
+
+</mapper>

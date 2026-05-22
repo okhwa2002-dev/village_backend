@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="village">
+
+  <select id="findAll">
+    SELECT id, section, title, body, image_url, sort_order, published, updated_at
+    FROM village_content
+    WHERE published = true
+    ORDER BY section, sort_order
+  </select>
+
+  <select id="findBySection">
+    SELECT id, section, title, body, image_url, sort_order, published, updated_at
+    FROM village_content
+    WHERE published = true AND section = #{section}
+    ORDER BY sort_order
+  </select>
+
+  <select id="findAllForAdmin">
+    SELECT id, section, title, body, image_url, sort_order, published, updated_at
+    FROM village_content
+    ORDER BY section, sort_order
+  </select>
+
+  <insert id="create">
+    INSERT INTO village_content (section, title, body, image_url, sort_order, published)
+    VALUES (#{section}, #{title}, #{body}, #{imageUrl}, #{sortOrder}, #{published})
+    RETURNING id, section, title, body, image_url, sort_order, published, updated_at
+  </insert>
+
+  <update id="update">
+    UPDATE village_content
+    SET section    = COALESCE(#{section}, section),
+        title      = COALESCE(#{title}, title),
+        body       = COALESCE(#{body}, body),
+        image_url  = COALESCE(#{imageUrl}, image_url),
+        sort_order = COALESCE(#{sortOrder}, sort_order),
+        published  = COALESCE(#{published}, published),
+        updated_at = NOW()
+    WHERE id = #{id}
+    RETURNING id, section, title, body, image_url, sort_order, published, updated_at
+  </update>
+
+  <delete id="delete">
+    DELETE FROM village_content WHERE id = #{id}
+  </delete>
+
+</mapper>

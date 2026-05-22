@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="product">
+
+  <select id="findAll">
+    SELECT p.id, p.farmer_id, p.name, p.description, p.price, p.stock,
+           p.category, p.images, p.status, p.created_at,
+           fp.name AS farmer_name
+    FROM products p
+    JOIN farmer_profiles fp ON fp.id = p.farmer_id
+    WHERE p.status = 'active'
+    <if test="category != null">
+      AND p.category = #{category}
+    </if>
+    <if test="farmerId != null">
+      AND p.farmer_id = #{farmerId}
+    </if>
+    ORDER BY p.created_at DESC
+  </select>
+
+  <select id="findById">
+    SELECT p.id, p.farmer_id, p.name, p.description, p.price, p.stock,
+           p.category, p.images, p.status, p.created_at,
+           fp.name AS farmer_name, fp.user_id AS farmer_user_id
+    FROM products p
+    JOIN farmer_profiles fp ON fp.id = p.farmer_id
+    WHERE p.id = #{id}
+  </select>
+
+  <select id="findByFarmerId">
+    SELECT id, farmer_id, name, description, price, stock,
+           category, images, status, created_at
+    FROM products
+    WHERE farmer_id = #{farmerId}
+    ORDER BY created_at DESC
+  </select>
+
+  <insert id="create">
+    INSERT INTO products (farmer_id, name, description, price, stock, category, images, status)
+    VALUES (#{farmerId}, #{name}, #{description}, #{price}, #{stock}, #{category}, #{images}::jsonb, #{status})
+    RETURNING id, farmer_id, name, description, price, stock, category, images, status, created_at
+  </insert>
+
+  <update id="update">
+    UPDATE products
+    SET name        = COALESCE(#{name}, name),
+        description = COALESCE(#{description}, description),
+        price       = COALESCE(#{price}, price),
+        stock       = COALESCE(#{stock}, stock),
+        category    = COALESCE(#{category}, category),
+        images      = COALESCE(#{images}::jsonb, images),
+        status      = COALESCE(#{status}, status)
+    WHERE id = #{id} AND farmer_id = #{farmerId}
+    RETURNING id, farmer_id, name, description, price, stock, category, images, status, created_at
+  </update>
+
+  <delete id="delete">
+    DELETE FROM products WHERE id = #{id} AND farmer_id = #{farmerId}
+  </delete>
+
+  <update id="decreaseStock">
+    UPDATE products
+    SET stock = stock - #{quantity}
+    WHERE id = #{id} AND stock >= #{quantity}
+  </update>
+
+</mapper>

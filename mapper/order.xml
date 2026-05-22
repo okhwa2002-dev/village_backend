@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="order">
+
+  <select id="findByUserId">
+    SELECT id, order_number, user_id, consumer_name, consumer_phone, consumer_email,
+           address, memo, status, total_price, created_at
+    FROM orders
+    WHERE user_id = #{userId}
+    ORDER BY created_at DESC
+  </select>
+
+  <select id="findById">
+    SELECT id, order_number, user_id, consumer_name, consumer_phone, consumer_email,
+           address, memo, status, total_price, created_at
+    FROM orders
+    WHERE id = #{id}
+  </select>
+
+  <select id="findItems">
+    SELECT oi.id, oi.order_id, oi.product_id, oi.quantity, oi.price_at_order,
+           p.name AS product_name, p.images
+    FROM order_items oi
+    JOIN products p ON p.id = oi.product_id
+    WHERE oi.order_id = #{orderId}
+  </select>
+
+  <insert id="create">
+    INSERT INTO orders (order_number, user_id, consumer_name, consumer_phone, consumer_email,
+                        address, memo, status, total_price)
+    VALUES (#{orderNumber}, #{userId}, #{consumerName}, #{consumerPhone}, #{consumerEmail},
+            #{address}, #{memo}, 'pending', #{totalPrice})
+    RETURNING id, order_number, user_id, consumer_name, consumer_phone, consumer_email,
+              address, memo, status, total_price, created_at
+  </insert>
+
+  <insert id="createItem">
+    INSERT INTO order_items (order_id, product_id, quantity, price_at_order)
+    VALUES (#{orderId}, #{productId}, #{quantity}, #{priceAtOrder})
+    RETURNING id, order_id, product_id, quantity, price_at_order
+  </insert>
+
+  <update id="updateStatus">
+    UPDATE orders SET status = #{status} WHERE id = #{id}
+  </update>
+
+  <select id="findAllForAdmin">
+    SELECT id, order_number, user_id, consumer_name, consumer_phone, consumer_email,
+           address, memo, status, total_price, created_at
+    FROM orders
+    ORDER BY created_at DESC
+  </select>
+
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="farmer">
+
+  <select id="findAll">
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description, u.email
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    WHERE u.status = 'active'
+    ORDER BY fp.name
+  </select>
+
+  <select id="findById">
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+           u.email, u.status
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    WHERE fp.id = #{id}
+  </select>
+
+  <select id="findByUserId">
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+           u.email, u.status
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    WHERE fp.user_id = #{userId}
+  </select>
+
+  <insert id="create">
+    INSERT INTO farmer_profiles (user_id, name, bio, photo_url, farm_description)
+    VALUES (#{userId}, #{name}, #{bio}, #{photoUrl}, #{farmDescription})
+    RETURNING id, user_id, name, bio, photo_url, farm_description
+  </insert>
+
+  <update id="update">
+    UPDATE farmer_profiles
+    SET name             = COALESCE(#{name}, name),
+        bio              = COALESCE(#{bio}, bio),
+        photo_url        = COALESCE(#{photoUrl}, photo_url),
+        farm_description = COALESCE(#{farmDescription}, farm_description)
+    WHERE user_id = #{userId}
+    RETURNING id, user_id, name, bio, photo_url, farm_description
+  </update>
+
+  <select id="findAllForAdmin">
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+           u.email, u.status, u.created_at
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    ORDER BY u.created_at DESC
+  </select>
+
+  <update id="updateUserStatus">
+    UPDATE users SET status = #{status} WHERE id = #{userId}
+  </update>
+
+</mapper>

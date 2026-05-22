@@ -1,0 +1,30 @@
+{
+  "defaultShell": "bash",
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx vitest*)",
+      "Bash(npx tsc*)",
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git commit*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/prettier-format.mjs",
+            "statusMessage": "Prettier 포맷 중...",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
