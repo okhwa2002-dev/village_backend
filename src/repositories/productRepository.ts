@@ -19,7 +19,7 @@ export const createProduct = (params: {
   price: number;
   stock: number;
   category: string;
-  images: string;
+  fileGroupId?: string;
   status: string;
 }): Promise<Product | null> => queryOne<Product>("product", "create", params);
 
@@ -31,7 +31,7 @@ export const updateProduct = (params: {
   price?: number;
   stock?: number;
   category?: string;
-  images?: string;
+  fileGroupId?: string;
   status?: string;
 }): Promise<Product | null> => queryOne<Product>("product", "update", params);
 
