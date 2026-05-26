@@ -34,7 +34,14 @@ export const checkMenuPermission =
   (menuCode: string, action?: "edit" | "delete") =>
   async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const user = req.user as JwtPayload;
-    const perms = await getUserMenuPermissions(user.id);
+    let perms;
+    try {
+      perms = await getUserMenuPermissions(user.id);
+    } catch {
+      return reply
+        .code(500)
+        .send({ success: false, message: "권한 조회에 실패했습니다" });
+    }
     const menu = perms.find((p) => p.menu_code === menuCode);
 
     if (!menu) {
