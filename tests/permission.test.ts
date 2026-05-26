@@ -39,6 +39,11 @@ describe("permissionRepository", () => {
 
     const result = await getUserMenuPermissions("999");
 
+    expect(pool.query).toHaveBeenCalledWith(
+      "permission",
+      "getUserMenuPermissions",
+      { userId: "999" },
+    );
     expect(result).toHaveLength(0);
   });
 });

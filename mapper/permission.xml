@@ -19,24 +19,5 @@
     GROUP  BY m.code
   </select>
 
-  <select id="getMenuTree">
-    SELECT mg.id         AS group_id,
-           mg.code       AS group_code,
-           mg.name       AS group_name,
-           mg.icon       AS group_icon,
-           mg.sort_order AS group_sort_order,
-           m.id,
-           m.code,
-           m.name,
-           m.path,
-           m.icon,
-           m.sort_order,
-           m.is_visible
-    FROM   menu_groups mg
-    LEFT JOIN menus m ON m.group_id = mg.id AND m.deleted_at IS NULL
-    WHERE  mg.deleted_at IS NULL
-      AND  mg.use_yn = 'Y'
-    ORDER  BY mg.sort_order ASC, m.sort_order ASC
-  </select>
 
 </mapper>
