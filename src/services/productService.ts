@@ -38,7 +38,7 @@ export const createProductByFarmer = async (
     price: dto.price,
     stock: dto.stock,
     category: dto.category,
-    images: JSON.stringify(dto.images ?? []),
+    fileGroupId: dto.fileGroupId,
     status: "active",
   });
 };
@@ -59,7 +59,7 @@ export const updateProductByFarmer = async (
     price: dto.price,
     stock: dto.stock,
     category: dto.category,
-    images: dto.images !== undefined ? JSON.stringify(dto.images) : undefined,
+    fileGroupId: dto.fileGroupId,
     status: dto.status,
   });
   if (!product) throw new Error("PRODUCT_NOT_FOUND");

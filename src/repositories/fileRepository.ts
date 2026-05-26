@@ -42,6 +42,9 @@ export const findFilesByGroupId = (
 export const findFileById = (id: string): Promise<FileRecord | null> =>
   queryOne<FileRecord>("file", "findFileById", { id });
 
+export const clearMainYn = (fileGroupId: string): Promise<number> =>
+  execute("file", "clearMainYn", { fileGroupId });
+
 export const promoteMainFile = (
   fileId: string,
   fileGroupId: string,
