@@ -9,31 +9,51 @@ CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'shipped', 'delivered'
 
 -- 사용자
 CREATE TABLE users (
-    id          BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email       VARCHAR(255) NOT NULL UNIQUE,
-    password    VARCHAR(255) NOT NULL,
-    role        user_role    NOT NULL,
-    status      user_status  NOT NULL DEFAULT 'pending',
-    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-    created_by  BIGINT       REFERENCES users(id),
-    updated_at  TIMESTAMP,
-    updated_by  BIGINT       REFERENCES users(id),
-    deleted_at  TIMESTAMP,
-    deleted_by  BIGINT       REFERENCES users(id)
+    id                   BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    login_id             VARCHAR(50)  NOT NULL UNIQUE,
+    email                VARCHAR(255),
+    password             VARCHAR(255) NOT NULL,
+    name                 VARCHAR(100),
+    phone                VARCHAR(20),
+    role                 user_role    NOT NULL,
+    status               user_status  NOT NULL DEFAULT 'pending',
+    last_login_at        TIMESTAMP,
+    password_changed_at  TIMESTAMP,
+    created_at           TIMESTAMP    NOT NULL DEFAULT NOW(),
+    created_by           BIGINT       REFERENCES users(id),
+    updated_at           TIMESTAMP,
+    updated_by           BIGINT       REFERENCES users(id),
+    deleted_at           TIMESTAMP,
+    deleted_by           BIGINT       REFERENCES users(id)
 );
-COMMENT ON TABLE  users            IS '서비스 사용자 (소비자/농민/관리자 통합)';
-COMMENT ON COLUMN users.id         IS '사용자 고유 식별자 (자동 증가 정수)';
-COMMENT ON COLUMN users.email      IS '로그인 이메일 (유일값)';
-COMMENT ON COLUMN users.password   IS 'bcrypt 해시된 비밀번호';
-COMMENT ON COLUMN users.role       IS '역할: admin=관리자, farmer=농민, consumer=소비자';
-COMMENT ON COLUMN users.status     IS '계정 상태 (공통코드 USER_STATUS_CD 참조: PENDING=승인대기, ACTIVE=정상, INACTIVE=비활성)';
-COMMENT ON COLUMN users.created_at IS '계정 생성 일시';
-COMMENT ON COLUMN users.created_by IS '최초 생성자 ID (자가 가입이면 NULL)';
-COMMENT ON COLUMN users.updated_at IS '마지막 수정 일시 (수정된 적 없으면 NULL)';
-COMMENT ON COLUMN users.updated_by IS '마지막 수정자 ID';
-COMMENT ON COLUMN users.deleted_at IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
-COMMENT ON COLUMN users.deleted_by IS '삭제 처리한 관리자 ID';
-CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NULL;
+COMMENT ON TABLE  users                        IS '서비스 사용자 (소비자/농민/관리자 통합)';
+COMMENT ON COLUMN users.login_id               IS '로그인용 아이디 (유일값)';
+COMMENT ON COLUMN users.email                  IS '이메일 (알림용, 선택값)';
+COMMENT ON COLUMN users.password               IS 'bcrypt 해시된 비밀번호';
+COMMENT ON COLUMN users.name                   IS '사용자 이름';
+COMMENT ON COLUMN users.phone                  IS '연락처';
+COMMENT ON COLUMN users.role                   IS '역할: admin=관리자, farmer=농민, consumer=소비자';
+COMMENT ON COLUMN users.status                 IS '계정 상태: pending=승인대기, active=정상, inactive=비활성';
+COMMENT ON COLUMN users.last_login_at          IS '최종 로그인 일시';
+COMMENT ON COLUMN users.password_changed_at    IS '비밀번호 변경 일시';
+COMMENT ON COLUMN users.created_at             IS '계정 생성 일시';
+COMMENT ON COLUMN users.deleted_at             IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
+CREATE INDEX idx_users_deleted_at  ON users(deleted_at) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_users_login_id ON users(login_id) WHERE deleted_at IS NULL;
+
+-- 사용자 세션
+CREATE TABLE user_sessions (
+    id         BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id    BIGINT      NOT NULL REFERENCES users(id),
+    token      VARCHAR(36) NOT NULL UNIQUE,
+    expires_at TIMESTAMP   NOT NULL,
+    created_at TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+COMMENT ON TABLE  user_sessions            IS '로그인 세션 (슬라이딩 만료)';
+COMMENT ON COLUMN user_sessions.token      IS 'UUID 세션 토큰';
+COMMENT ON COLUMN user_sessions.expires_at IS '만료 일시 — 로그아웃 시 NOW()로 갱신';
+CREATE INDEX idx_user_sessions_token      ON user_sessions(token);
+CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at);
 
 -- 농민 프로필
 CREATE TABLE farmer_profiles (
