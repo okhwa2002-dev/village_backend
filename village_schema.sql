@@ -342,6 +342,7 @@ COMMENT ON COLUMN menus.updated_by IS '마지막 수정자 ID';
 COMMENT ON COLUMN menus.deleted_at IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
 COMMENT ON COLUMN menus.deleted_by IS '삭제 처리자 ID';
 CREATE INDEX idx_menus_parent_id  ON menus(parent_id);
+CREATE INDEX idx_menus_group_id   ON menus(group_id);
 CREATE INDEX idx_menus_deleted_at ON menus(deleted_at) WHERE deleted_at IS NULL;
 
 -- 권한
@@ -399,15 +400,20 @@ CREATE TABLE permission_menus (
     created_by    BIGINT    REFERENCES users(id),
     updated_at    TIMESTAMP,
     updated_by    BIGINT    REFERENCES users(id),
-    UNIQUE (permission_id, menu_id)
+    deleted_at    TIMESTAMP,
+    deleted_by    BIGINT    REFERENCES users(id)
 );
 COMMENT ON TABLE  permission_menus               IS '권한별 메뉴 접근 범위 (행 존재=읽기, edit_yn/delete_yn으로 수정/삭제 제어)';
 COMMENT ON COLUMN permission_menus.permission_id IS 'permissions.id 참조';
 COMMENT ON COLUMN permission_menus.menu_id       IS 'menus.id 참조';
 COMMENT ON COLUMN permission_menus.edit_yn       IS '수정 가능 여부 (Y=가능)';
 COMMENT ON COLUMN permission_menus.delete_yn     IS '삭제 가능 여부 (Y=가능)';
+COMMENT ON COLUMN permission_menus.deleted_at    IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
+COMMENT ON COLUMN permission_menus.deleted_by    IS '삭제 처리자 ID';
+CREATE UNIQUE INDEX uidx_permission_menus ON permission_menus(permission_id, menu_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_permission_menus_permission_id ON permission_menus(permission_id);
 CREATE INDEX idx_permission_menus_menu_id       ON permission_menus(menu_id);
+CREATE INDEX idx_permission_menus_deleted_at    ON permission_menus(deleted_at) WHERE deleted_at IS NULL;
 
 -- 마을 콘텐츠
 CREATE TABLE village_content (
