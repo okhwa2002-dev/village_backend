@@ -8,7 +8,7 @@ import {
   updateOrderStatusHandler,
 } from "../controllers/orderController";
 import { CreateOrderDto } from "../types/orderTypes";
-import { authenticate, requireRole } from "../plugins/authenticate";
+import { authenticate, checkMenuPermission } from "../plugins/authenticate";
 
 export default async function orderRoutes(app: FastifyInstance) {
   const auth = { preHandler: [authenticate] };
@@ -102,7 +102,7 @@ export default async function orderRoutes(app: FastifyInstance) {
         summary: "전체 주문 목록",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_ORDER")],
     },
     getAdminOrdersHandler,
   );
@@ -131,7 +131,7 @@ export default async function orderRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_ORDER", "edit")],
     },
     updateOrderStatusHandler,
   );

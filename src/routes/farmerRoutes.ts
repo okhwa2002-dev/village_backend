@@ -9,7 +9,11 @@ import {
   rejectFarmerHandler,
 } from "../controllers/farmerController";
 import { UpsertFarmerProfileDto } from "../types/farmerTypes";
-import { requireRole } from "../plugins/authenticate";
+import {
+  authenticate,
+  requireRole,
+  checkMenuPermission,
+} from "../plugins/authenticate";
 
 export default async function farmerRoutes(app: FastifyInstance) {
   app.get(
@@ -68,7 +72,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "전체 농민 목록",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER")],
     },
     getFarmersAdminHandler,
   );
@@ -81,7 +85,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "농민 승인",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER", "edit")],
     },
     approveFarmerHandler,
   );
@@ -94,7 +98,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "농민 거절",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER", "edit")],
     },
     rejectFarmerHandler,
   );

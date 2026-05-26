@@ -11,7 +11,7 @@ import {
   CreateVillageContentDto,
   UpdateVillageContentDto,
 } from "../types/villageTypes";
-import { requireRole } from "../plugins/authenticate";
+import { authenticate, checkMenuPermission } from "../plugins/authenticate";
 
 export default async function villageRoutes(app: FastifyInstance) {
   app.get(
@@ -34,7 +34,7 @@ export default async function villageRoutes(app: FastifyInstance) {
         summary: "전체 콘텐츠 목록 (관리자)",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE")],
     },
     getContentsAdminHandler,
   );
@@ -59,7 +59,7 @@ export default async function villageRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
     createContentHandler,
   );
@@ -83,7 +83,7 @@ export default async function villageRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
     updateContentHandler,
   );
@@ -96,7 +96,10 @@ export default async function villageRoutes(app: FastifyInstance) {
         summary: "콘텐츠 삭제",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("admin")],
+      preHandler: [
+        authenticate,
+        checkMenuPermission("ADMIN_VILLAGE", "delete"),
+      ],
     },
     deleteContentHandler,
   );
