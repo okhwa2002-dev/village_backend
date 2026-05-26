@@ -29,16 +29,16 @@
 
   <select id="findFilesByGroupId">
     SELECT id, file_group_id, original_name, stored_name, file_path, file_url,
-           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at
+           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at, updated_at
     FROM files
     WHERE file_group_id = #{fileGroupId}
       AND deleted_at IS NULL
-    ORDER BY sort_order ASC
+    ORDER BY sort_order ASC, id ASC
   </select>
 
   <select id="findFileById">
     SELECT id, file_group_id, original_name, stored_name, file_path, file_url,
-           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at
+           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at, updated_at
     FROM files
     WHERE id = #{id} AND deleted_at IS NULL
   </select>

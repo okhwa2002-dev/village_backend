@@ -14,7 +14,7 @@
 
   <select id="findItems">
     SELECT ci.id, ci.cart_id, ci.product_id, ci.quantity,
-           p.name AS product_name, p.price, p.stock, p.images, p.status AS product_status,
+           p.name AS product_name, p.price, p.stock, p.file_group_id, p.status AS product_status,
            fp.name AS farmer_name
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id

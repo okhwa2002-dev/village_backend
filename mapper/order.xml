@@ -20,7 +20,7 @@
 
   <select id="findItems">
     SELECT oi.id, oi.order_id, oi.product_id, oi.quantity, oi.price_at_order,
-           p.name AS product_name, p.images
+           p.name AS product_name, p.file_group_id
     FROM order_items oi
     JOIN products p ON p.id = oi.product_id
     WHERE oi.order_id = #{orderId}

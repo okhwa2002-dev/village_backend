@@ -12,7 +12,7 @@ export interface CartItem {
   product_name: string;
   price: number;
   stock: number;
-  images: string[];
+  file_group_id: string | null;
   product_status: string;
   farmer_name: string;
 }

@@ -22,7 +22,7 @@ export interface OrderItemDetail {
   quantity: number;
   price_at_order: number;
   product_name: string;
-  images: string[];
+  file_group_id: string | null;
 }
 
 export interface CreateOrderItemDto {
