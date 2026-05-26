@@ -8,7 +8,7 @@ export interface Product {
   price: number;
   stock: number;
   category: string;
-  images: string[];
+  file_group_id: string | null;
   status: ProductStatus;
   created_at: Date;
   farmer_name?: string;
@@ -21,7 +21,7 @@ export interface CreateProductDto {
   price: number;
   stock: number;
   category: string;
-  images?: string[];
+  fileGroupId?: string;
 }
 
 export interface UpdateProductDto {
@@ -30,6 +30,6 @@ export interface UpdateProductDto {
   price?: number;
   stock?: number;
   category?: string;
-  images?: string[];
+  fileGroupId?: string;
   status?: ProductStatus;
 }
