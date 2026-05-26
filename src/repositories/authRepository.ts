@@ -1,5 +1,6 @@
 import { queryOne, execute } from "../db/pool";
 import { User } from "../types/userTypes";
+import { UserRole, UserStatus } from "../types/commonTypes";
 
 export type UserRow = Omit<User, "password">;
 
@@ -10,8 +11,8 @@ export interface SessionRow {
   expires_at: Date;
   login_id: string;
   name: string | null;
-  role: string;
-  status: string;
+  role: UserRole;
+  status: UserStatus;
 }
 
 export const findUserByLoginId = (loginId: string): Promise<User | null> =>

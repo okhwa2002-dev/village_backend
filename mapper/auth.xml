@@ -37,6 +37,7 @@
     JOIN   users u ON u.id = s.user_id AND u.deleted_at IS NULL
     WHERE  s.token      = #{token}
       AND  s.expires_at > NOW()
+      AND  u.status     = 'active'
   </select>
 
   <update id="refreshSession">
