@@ -5,7 +5,7 @@
 
   <select id="findAll">
     SELECT p.id, p.farmer_id, p.name, p.description, p.price, p.stock,
-           p.category, p.images, p.status, p.created_at,
+           p.category, p.file_group_id, p.status, p.created_at,
            fp.name AS farmer_name
     FROM products p
     JOIN farmer_profiles fp ON fp.id = p.farmer_id
@@ -21,7 +21,7 @@
 
   <select id="findById">
     SELECT p.id, p.farmer_id, p.name, p.description, p.price, p.stock,
-           p.category, p.images, p.status, p.created_at,
+           p.category, p.file_group_id, p.status, p.created_at,
            fp.name AS farmer_name, fp.user_id AS farmer_user_id
     FROM products p
     JOIN farmer_profiles fp ON fp.id = p.farmer_id
@@ -30,16 +30,16 @@
 
   <select id="findByFarmerId">
     SELECT id, farmer_id, name, description, price, stock,
-           category, images, status, created_at
+           category, file_group_id, status, created_at
     FROM products
     WHERE farmer_id = #{farmerId}
     ORDER BY created_at DESC
   </select>
 
   <insert id="create">
-    INSERT INTO products (farmer_id, name, description, price, stock, category, images, status)
-    VALUES (#{farmerId}, #{name}, #{description}, #{price}, #{stock}, #{category}, #{images}::jsonb, #{status})
-    RETURNING id, farmer_id, name, description, price, stock, category, images, status, created_at
+    INSERT INTO products (farmer_id, name, description, price, stock, category, file_group_id, status)
+    VALUES (#{farmerId}, #{name}, #{description}, #{price}, #{stock}, #{category}, #{fileGroupId}, #{status})
+    RETURNING id, farmer_id, name, description, price, stock, category, file_group_id, status, created_at
   </insert>
 
   <update id="update">
@@ -49,10 +49,10 @@
         price       = COALESCE(#{price}, price),
         stock       = COALESCE(#{stock}, stock),
         category    = COALESCE(#{category}, category),
-        images      = COALESCE(#{images}::jsonb, images),
+        file_group_id = COALESCE(#{fileGroupId}, file_group_id),
         status      = COALESCE(#{status}, status)
     WHERE id = #{id} AND farmer_id = #{farmerId}
-    RETURNING id, farmer_id, name, description, price, stock, category, images, status, created_at
+    RETURNING id, farmer_id, name, description, price, stock, category, file_group_id, status, created_at
   </update>
 
   <delete id="delete">

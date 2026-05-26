@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="file">
+
+  <insert id="createGroup">
+    INSERT INTO file_groups (ref_type, created_by)
+    VALUES (#{refType}, #{createdBy})
+    RETURNING id, ref_type, created_at, created_by
+  </insert>
+
+  <select id="findGroupById">
+    SELECT id, ref_type, created_at, created_by
+    FROM file_groups
+    WHERE id = #{id}
+  </select>
+
+  <insert id="createFile">
+    INSERT INTO files (
+      file_group_id, original_name, stored_name, file_path, file_url,
+      mime_type, file_size, storage_type, sort_order, is_main_yn, created_by
+    ) VALUES (
+      #{fileGroupId}, #{originalName}, #{storedName}, #{filePath}, #{fileUrl},
+      #{mimeType}, #{fileSize}, #{storageType}, #{sortOrder}, #{isMainYn}, #{createdBy}
+    )
+    RETURNING id, file_group_id, original_name, stored_name, file_path, file_url,
+              mime_type, file_size, storage_type, sort_order, is_main_yn, created_at
+  </insert>
+
+  <select id="findFilesByGroupId">
+    SELECT id, file_group_id, original_name, stored_name, file_path, file_url,
+           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at
+    FROM files
+    WHERE file_group_id = #{fileGroupId}
+      AND deleted_at IS NULL
+    ORDER BY sort_order ASC
+  </select>
+
+  <select id="findFileById">
+    SELECT id, file_group_id, original_name, stored_name, file_path, file_url,
+           mime_type, file_size, storage_type, sort_order, is_main_yn, created_at
+    FROM files
+    WHERE id = #{id} AND deleted_at IS NULL
+  </select>
+
+  <update id="clearMainYn">
+    UPDATE files
+    SET is_main_yn = 'N'
+    WHERE file_group_id = #{fileGroupId}
+      AND is_main_yn = 'Y'
+      AND deleted_at IS NULL
+  </update>
+
+  <update id="updateFile">
+    UPDATE files
+    SET sort_order = COALESCE(#{sortOrder}, sort_order),
+        is_main_yn = COALESCE(#{isMainYn}, is_main_yn),
+        updated_at = NOW(),
+        updated_by = #{updatedBy}
+    WHERE id = #{id} AND deleted_at IS NULL
+    RETURNING id, file_group_id, original_name, stored_name, file_path, file_url,
+              mime_type, file_size, storage_type, sort_order, is_main_yn, created_at, updated_at
+  </update>
+
+  <update id="deleteFile">
+    UPDATE files
+    SET deleted_at = NOW(), deleted_by = #{deletedBy}
+    WHERE id = #{id} AND deleted_at IS NULL
+  </update>
+
+</mapper>

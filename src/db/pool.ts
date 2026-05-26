@@ -25,6 +25,7 @@ mybatisMapper.createMapper([
   `${mapperDir}/cart.xml`,
   `${mapperDir}/order.xml`,
   `${mapperDir}/village.xml`,
+  `${mapperDir}/file.xml`,
 ]);
 
 const format = { language: "sql" as const, indent: "  " };
