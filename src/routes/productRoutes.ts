@@ -8,7 +8,7 @@ import {
   deleteProductHandler,
 } from "../controllers/productController";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
-import { requireRole } from "../plugins/authenticate";
+import { authenticate, requireRole } from "../plugins/authenticate";
 
 export default async function productRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { category?: string; farmerId?: string } }>(
@@ -43,7 +43,7 @@ export default async function productRoutes(app: FastifyInstance) {
         summary: "내 상품 목록",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     getMyProductsHandler,
   );
@@ -68,7 +68,7 @@ export default async function productRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     createProductHandler,
   );
@@ -93,7 +93,7 @@ export default async function productRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     updateProductHandler,
   );
@@ -106,7 +106,7 @@ export default async function productRoutes(app: FastifyInstance) {
         summary: "상품 삭제",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     deleteProductHandler,
   );

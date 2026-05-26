@@ -44,7 +44,11 @@ export const authenticate = async (
       .send({ success: false, message: "인증이 필요합니다" });
   }
 
-  await refreshSession(token, getExpiresAt());
+  try {
+    await refreshSession(token, getExpiresAt());
+  } catch {
+    // best-effort: session valid, don't fail the request
+  }
   req.user = {
     id: session.user_id,
     login_id: session.login_id,
