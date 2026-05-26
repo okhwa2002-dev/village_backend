@@ -77,7 +77,8 @@ FROM menu_groups mg,
     ('SERVICE_ADMIN', 'ADMIN_VILLAGE',     '마을 관리',     '/admin/village',      3)
 ) AS v(group_code, code, name, path, sort_order)
 WHERE mg.code = v.group_code
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (code) DO UPDATE SET group_id = EXCLUDED.group_id
+WHERE menus.group_id IS NULL;
 
 -- 7. 씨드: SUPER_ADMIN 권한
 INSERT INTO permissions (code, name, description)
@@ -95,4 +96,4 @@ WHERE p.code = 'SUPER_ADMIN'
       'ADMIN_FARMER', 'ADMIN_ORDER', 'ADMIN_VILLAGE'
   )
   AND m.deleted_at IS NULL
-ON CONFLICT DO NOTHING;
+ON CONFLICT (permission_id, menu_id) WHERE deleted_at IS NULL DO NOTHING;
