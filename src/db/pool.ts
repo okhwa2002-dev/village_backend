@@ -26,6 +26,7 @@ mybatisMapper.createMapper([
   `${mapperDir}/order.xml`,
   `${mapperDir}/village.xml`,
   `${mapperDir}/file.xml`,
+  `${mapperDir}/permission.xml`,
 ]);
 
 const format = { language: "sql" as const, indent: "  " };

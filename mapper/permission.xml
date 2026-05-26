@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="permission">
+
+  <select id="getUserMenuPermissions">
+    SELECT m.code                      AS menu_code,
+           BOOL_OR(pm.edit_yn   = 'Y') AS can_edit,
+           BOOL_OR(pm.delete_yn = 'Y') AS can_delete
+    FROM   user_organizations uo
+    JOIN   org_permissions op  ON op.organization_id = uo.organization_id
+                              AND op.deleted_at IS NULL
+    JOIN   permission_menus pm ON pm.permission_id   = op.permission_id
+                              AND pm.deleted_at IS NULL
+    JOIN   menus m             ON m.id               = pm.menu_id
+                              AND m.deleted_at IS NULL
+    WHERE  uo.user_id    = #{userId}
+      AND  uo.deleted_at IS NULL
+    GROUP  BY m.code
+  </select>
+
+  <select id="getMenuTree">
+    SELECT mg.id         AS group_id,
+           mg.code       AS group_code,
+           mg.name       AS group_name,
+           mg.icon       AS group_icon,
+           mg.sort_order AS group_sort_order,
+           m.id,
+           m.code,
+           m.name,
+           m.path,
+           m.icon,
+           m.sort_order,
+           m.is_visible
+    FROM   menu_groups mg
+    LEFT JOIN menus m ON m.group_id = mg.id AND m.deleted_at IS NULL
+    WHERE  mg.deleted_at IS NULL
+      AND  mg.use_yn = 'Y'
+    ORDER  BY mg.sort_order ASC, m.sort_order ASC
+  </select>
+
+</mapper>
