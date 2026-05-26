@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 
 vi.mock("../src/db/pool", () => ({
   pool: { query: vi.fn() },
@@ -16,9 +24,13 @@ vi.mock("../src/utils/hash", () => ({
   comparePassword: vi.fn(),
 }));
 
-vi.mock("crypto", () => ({
-  randomUUID: vi.fn().mockReturnValue("test-uuid-1234"),
-}));
+vi.mock("crypto", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("crypto")>();
+  return {
+    ...actual,
+    randomUUID: vi.fn().mockReturnValue("test-uuid-1234"),
+  };
+});
 
 import * as pool from "../src/db/pool";
 import {
@@ -229,5 +241,173 @@ describe("authService.logout", () => {
     expect(pool.execute).toHaveBeenCalledWith("auth", "expireSession", {
       token: "uuid-token",
     });
+  });
+});
+
+import buildApp from "../src/app";
+import { FastifyInstance } from "fastify";
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = buildApp();
+  await app.ready();
+});
+
+afterAll(async () => {
+  await app.close();
+});
+
+describe("POST /api/auth/register", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("farmer 가입 시 201과 status=pending을 반환한다", async () => {
+    vi.mocked(pool.queryOne)
+      .mockResolvedValueOnce(null) // findUserByLoginId — 중복 없음
+      .mockResolvedValueOnce({
+        id: "1",
+        login_id: "farmer01",
+        role: "farmer",
+        status: "pending",
+        created_at: new Date(),
+      });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: {
+        login_id: "farmer01",
+        password: "password123",
+        role: "farmer",
+        name: "김농부",
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data.status).toBe("pending");
+  });
+
+  it("login_id 중복 시 409를 반환한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce({
+      id: "1",
+      login_id: "farmer01",
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: {
+        login_id: "farmer01",
+        password: "password123",
+        role: "farmer",
+      },
+    });
+
+    expect(res.statusCode).toBe(409);
+  });
+
+  it("role이 유효하지 않으면 400을 반환한다", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { login_id: "admin01", password: "password123", role: "admin" },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("POST /api/auth/login", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("성공 시 200과 token을 반환한다", async () => {
+    vi.mocked(pool.queryOne)
+      .mockResolvedValueOnce({
+        id: "1",
+        login_id: "admin01",
+        password: "hashed",
+        status: "active",
+        role: "admin",
+        name: "관리자",
+      })
+      .mockResolvedValueOnce({ token: "test-uuid-1234" }); // createSession
+    vi.mocked(pool.execute).mockResolvedValueOnce(1); // updateLastLoginAt
+    vi.mocked(hash.comparePassword).mockResolvedValueOnce(true);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { login_id: "admin01", password: "password123" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data.token).toBeDefined();
+  });
+
+  it("login_id가 없으면 401을 반환한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { login_id: "nobody", password: "password123" },
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("비활성 계정이면 403을 반환한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce({
+      id: "1",
+      login_id: "farmer01",
+      password: "hashed",
+      status: "pending",
+      role: "farmer",
+    });
+    vi.mocked(hash.comparePassword).mockResolvedValueOnce(true);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { login_id: "farmer01", password: "password123" },
+    });
+
+    expect(res.statusCode).toBe(403);
+  });
+});
+
+describe("POST /api/auth/logout", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("인증 없이 접근하면 401을 반환한다", async () => {
+    const res = await app.inject({ method: "POST", url: "/api/auth/logout" });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("유효한 토큰으로 로그아웃하면 200을 반환한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce({
+      id: "10",
+      user_id: "1",
+      token: "uuid-abc",
+      expires_at: new Date(Date.now() + 60_000),
+      login_id: "admin01",
+      name: "관리자",
+      role: "admin",
+      status: "active",
+    });
+    vi.mocked(pool.execute)
+      .mockResolvedValueOnce(1) // refreshSession (in authenticate)
+      .mockResolvedValueOnce(1); // expireSession (in logout)
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/logout",
+      headers: { authorization: "Bearer uuid-abc" },
+    });
+
+    expect(res.statusCode).toBe(200);
   });
 });
