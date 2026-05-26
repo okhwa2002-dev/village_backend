@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 
 vi.mock("../src/db/pool", () => ({
   pool: { query: vi.fn() },
@@ -45,5 +53,89 @@ describe("permissionRepository", () => {
       { userId: "999" },
     );
     expect(result).toHaveLength(0);
+  });
+});
+
+import buildApp from "../src/app";
+import { FastifyInstance } from "fastify";
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = buildApp();
+  await app.ready();
+});
+
+afterAll(async () => {
+  await app.close();
+});
+
+describe("checkMenuPermission 미들웨어", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("메뉴 권한이 없으면 403을 반환한다", async () => {
+    vi.mocked(pool.query).mockResolvedValueOnce([]); // 권한 없음
+
+    const token = app.jwt.sign({
+      id: "1",
+      email: "admin@test.com",
+      role: "admin",
+    });
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/farmers",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("읽기 권한이 있으면 admin/farmers GET에 200을 반환한다", async () => {
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce([
+        { menu_code: "ADMIN_FARMER", can_edit: false, can_delete: false },
+      ])
+      .mockResolvedValueOnce([]); // findAllFarmersForAdmin returns empty list
+
+    const token = app.jwt.sign({
+      id: "1",
+      email: "admin@test.com",
+      role: "admin",
+    });
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/farmers",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("edit 권한이 없으면 PATCH 라우트에 403을 반환한다", async () => {
+    vi.mocked(pool.query).mockResolvedValueOnce([
+      { menu_code: "ADMIN_FARMER", can_edit: false, can_delete: false },
+    ]);
+
+    const token = app.jwt.sign({
+      id: "1",
+      email: "admin@test.com",
+      role: "admin",
+    });
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/admin/farmers/1/approve",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("인증 없이 접근하면 401을 반환한다", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/farmers",
+    });
+
+    expect(res.statusCode).toBe(401);
   });
 });
