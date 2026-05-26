@@ -1,6 +1,5 @@
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
-import jwt from "@fastify/jwt";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import multipart from "@fastify/multipart";
@@ -21,10 +20,6 @@ export default function buildApp(): FastifyInstance {
 
   app.register(cors, {
     origin: process.env.CORS_ORIGIN || "*",
-  });
-
-  app.register(jwt, {
-    secret: process.env.JWT_SECRET || "dev-secret",
   });
 
   app.register(swagger, {

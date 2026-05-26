@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { JwtPayload } from "../types/commonTypes";
 import { AddCartItemDto, UpdateCartItemDto } from "../types/cartTypes";
 import {
   getCart,
@@ -14,7 +13,7 @@ export const getCartHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const user = req.user as JwtPayload;
+  const user = req.user;
   const cart = await getCart(user.id);
   return reply.send(successResponse(cart));
 };
@@ -24,7 +23,7 @@ export const addCartItemHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const item = await addCartItem(user.id, req.body);
     return reply
       .code(201)
@@ -41,7 +40,7 @@ export const updateCartItemHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     await updateCartItem(user.id, req.params.itemId, req.body);
     return reply.send(successResponse(null, "수량이 변경되었습니다"));
   } catch (err: unknown) {
@@ -64,7 +63,7 @@ export const removeCartItemHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     await removeCartItem(user.id, req.params.itemId);
     return reply.send(successResponse(null, "아이템이 삭제되었습니다"));
   } catch (err: unknown) {
@@ -80,7 +79,7 @@ export const clearCartHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const user = req.user as JwtPayload;
+  const user = req.user;
   await clearCart(user.id);
   return reply.send(successResponse(null, "장바구니가 비워졌습니다"));
 };

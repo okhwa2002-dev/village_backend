@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { JwtPayload } from "../types/commonTypes";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
 import {
   getProducts,
@@ -40,7 +39,7 @@ export const getMyProductsHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const products = await getMyProducts(user.id);
     return reply.send(successResponse(products));
   } catch (err: unknown) {
@@ -55,7 +54,7 @@ export const createProductHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const product = await createProductByFarmer(user.id, req.body);
     return reply
       .code(201)
@@ -72,7 +71,7 @@ export const updateProductHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const product = await updateProductByFarmer(
       user.id,
       req.params.id,
@@ -95,7 +94,7 @@ export const deleteProductHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     await deleteProductByFarmer(user.id, req.params.id);
     return reply.send(successResponse(null, "상품이 삭제되었습니다"));
   } catch (err: unknown) {

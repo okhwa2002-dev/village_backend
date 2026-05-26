@@ -1,31 +1,63 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { JwtPayload, UserRole } from "../types/commonTypes";
+import { SessionUser, UserRole } from "../types/commonTypes";
 import { getUserMenuPermissions } from "../repositories/permissionRepository";
+import {
+  findSessionByToken,
+  refreshSession,
+} from "../repositories/authRepository";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    user: SessionUser;
+  }
+}
+
+const getExpiresAt = (): Date => {
+  const d = new Date();
+  d.setMinutes(
+    d.getMinutes() + parseInt(process.env.SESSION_DURATION_MINUTES || "30", 10),
+  );
+  return d;
+};
+
+const extractToken = (req: FastifyRequest): string | null => {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith("Bearer ")) return null;
+  return auth.slice(7);
+};
 
 export const authenticate = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> => {
-  try {
-    await req.jwtVerify();
-  } catch {
+  const token = extractToken(req);
+  if (!token) {
     return reply
       .code(401)
       .send({ success: false, message: "인증이 필요합니다" });
   }
+
+  const session = await findSessionByToken(token);
+  if (!session) {
+    return reply
+      .code(401)
+      .send({ success: false, message: "인증이 필요합니다" });
+  }
+
+  await refreshSession(token, getExpiresAt());
+  req.user = {
+    id: session.user_id,
+    login_id: session.login_id,
+    name: session.name,
+    role: session.role,
+    status: session.status,
+  };
 };
 
 export const requireRole =
   (...roles: UserRole[]) =>
   async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    try {
-      await req.jwtVerify();
-    } catch {
-      reply.code(401).send({ success: false, message: "인증이 필요합니다" });
-      return;
-    }
-    const user = req.user as JwtPayload;
-    if (!roles.includes(user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return reply
         .code(403)
         .send({ success: false, message: "권한이 없습니다" });
@@ -35,10 +67,9 @@ export const requireRole =
 export const checkMenuPermission =
   (menuCode: string, action?: "edit" | "delete") =>
   async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    const user = req.user as JwtPayload;
     let perms;
     try {
-      perms = await getUserMenuPermissions(user.id);
+      perms = await getUserMenuPermissions(req.user.id);
     } catch {
       return reply
         .code(500)

@@ -1,76 +1,65 @@
-import { FastifyInstance } from 'fastify'
-import { registerHandler, loginHandler, refreshHandler, logoutHandler } from '../controllers/authController'
-import { authenticate } from '../plugins/authenticate'
-import { RegisterDto } from '../types/userTypes'
+import { FastifyInstance } from "fastify";
+import {
+  registerHandler,
+  loginHandler,
+  logoutHandler,
+} from "../controllers/authController";
+import { authenticate } from "../plugins/authenticate";
+import { RegisterDto, LoginDto } from "../types/userTypes";
 
 export default async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: RegisterDto }>(
-    '/auth/register',
+    "/auth/register",
     {
       schema: {
-        tags: ['Auth'],
-        summary: '회원가입',
+        tags: ["Auth"],
+        summary: "회원가입",
         body: {
-          type: 'object',
-          required: ['email', 'password', 'role'],
+          type: "object",
+          required: ["login_id", "password", "role"],
           properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 6 },
-            role: { type: 'string', enum: ['farmer', 'consumer'] },
+            login_id: { type: "string" },
+            password: { type: "string", minLength: 6 },
+            role: { type: "string", enum: ["farmer", "consumer"] },
+            name: { type: "string" },
+            phone: { type: "string" },
+            email: { type: "string", format: "email" },
           },
         },
       },
     },
-    registerHandler
-  )
+    registerHandler,
+  );
 
-  app.post<{ Body: { email: string; password: string } }>(
-    '/auth/login',
+  app.post<{ Body: LoginDto }>(
+    "/auth/login",
     {
       schema: {
-        tags: ['Auth'],
-        summary: '로그인',
+        tags: ["Auth"],
+        summary: "로그인",
         body: {
-          type: 'object',
-          required: ['email', 'password'],
+          type: "object",
+          required: ["login_id", "password"],
           properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string' },
+            login_id: { type: "string" },
+            password: { type: "string" },
           },
         },
       },
     },
-    loginHandler
-  )
-
-  app.post<{ Body: { refreshToken: string } }>(
-    '/auth/refresh',
-    {
-      schema: {
-        tags: ['Auth'],
-        summary: '토큰 갱신',
-        body: {
-          type: 'object',
-          required: ['refreshToken'],
-          properties: {
-            refreshToken: { type: 'string' },
-          },
-        },
-      },
-    },
-    refreshHandler
-  )
+    loginHandler,
+  );
 
   app.post(
-    '/auth/logout',
+    "/auth/logout",
     {
       schema: {
-        tags: ['Auth'],
-        summary: '로그아웃',
+        tags: ["Auth"],
+        summary: "로그아웃",
         security: [{ bearerAuth: [] }],
       },
       preHandler: [authenticate],
     },
-    logoutHandler
-  )
+    logoutHandler,
+  );
 }

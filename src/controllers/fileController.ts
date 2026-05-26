@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import "@fastify/multipart";
-import { JwtPayload } from "../types/commonTypes";
 import { FileRefType, PatchFileDto } from "../types/fileTypes";
 import {
   createGroup,
@@ -15,7 +14,7 @@ export const createFileGroupHandler = async (
   req: FastifyRequest<{ Body: { refType: FileRefType } }>,
   reply: FastifyReply,
 ) => {
-  const user = req.user as JwtPayload;
+  const user = req.user;
   const group = await createGroup(req.body.refType, user.id);
   return reply
     .code(201)
@@ -27,7 +26,7 @@ export const uploadFileHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const data = await req.file();
     if (!data) return reply.code(400).send(errorResponse("파일이 없습니다"));
 
@@ -75,7 +74,7 @@ export const patchFileHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const file = await patchFile({
       id: req.params.id,
       sortOrder: req.body.sortOrder,
@@ -95,7 +94,7 @@ export const deleteFileHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     await removeFileById(req.params.id, user.id);
     return reply.send(successResponse(null, "파일이 삭제되었습니다"));
   } catch (err: unknown) {

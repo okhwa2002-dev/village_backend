@@ -154,18 +154,27 @@ describe("POST /api/file-groups", () => {
   });
 
   it("유효한 토큰으로 파일 그룹을 생성한다", async () => {
-    const mockGroup = { id: "1", ref_type: "PRODUCT", created_at: new Date() };
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockGroup);
-
-    const token = app.jwt.sign({
-      id: "1",
-      email: "user@test.com",
+    const TEST_TOKEN = "test-session-file-1234";
+    const mockSession = {
+      id: "10",
+      user_id: "1",
+      token: TEST_TOKEN,
+      expires_at: new Date(Date.now() + 60_000),
+      login_id: "farmer01",
+      name: "농민",
       role: "farmer",
-    });
+      status: "active",
+    };
+    const mockGroup = { id: "1", ref_type: "PRODUCT", created_at: new Date() };
+    vi.mocked(pool.queryOne)
+      .mockResolvedValueOnce(mockSession) // findSessionByToken
+      .mockResolvedValueOnce(mockGroup); // createGroup
+    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
+
     const res = await app.inject({
       method: "POST",
       url: "/api/file-groups",
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
       payload: { refType: "PRODUCT" },
     });
 
@@ -203,17 +212,26 @@ describe("GET /api/file-groups/:id/files", () => {
 
 describe("DELETE /api/files/:id", () => {
   it("파일이 없으면 404를 반환한다", async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-
-    const token = app.jwt.sign({
-      id: "1",
-      email: "user@test.com",
+    const TEST_TOKEN = "test-session-file-delete-1234";
+    const mockSession = {
+      id: "10",
+      user_id: "1",
+      token: TEST_TOKEN,
+      expires_at: new Date(Date.now() + 60_000),
+      login_id: "farmer01",
+      name: "농민",
       role: "farmer",
-    });
+      status: "active",
+    };
+    vi.mocked(pool.queryOne)
+      .mockResolvedValueOnce(mockSession) // findSessionByToken
+      .mockResolvedValueOnce(null); // findFileById → FILE_NOT_FOUND
+    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
+
     const res = await app.inject({
       method: "DELETE",
       url: "/api/files/999",
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
     });
 
     expect(res.statusCode).toBe(404);

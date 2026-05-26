@@ -36,7 +36,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "내 프로필",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     getMyProfileHandler,
   );
@@ -59,7 +59,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [requireRole("farmer")],
+      preHandler: [authenticate, requireRole("farmer")],
     },
     upsertProfileHandler,
   );

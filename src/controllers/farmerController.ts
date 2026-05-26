@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { JwtPayload } from "../types/commonTypes";
 import { UpsertFarmerProfileDto } from "../types/farmerTypes";
 import {
   getFarmers,
@@ -39,7 +38,7 @@ export const getMyProfileHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const profile = await getMyProfile(user.id);
     return reply.send(successResponse(profile));
   } catch (err: unknown) {
@@ -53,7 +52,7 @@ export const upsertProfileHandler = async (
   req: FastifyRequest<{ Body: UpsertFarmerProfileDto }>,
   reply: FastifyReply,
 ) => {
-  const user = req.user as JwtPayload;
+  const user = req.user;
   const profile = await upsertProfile(user.id, req.body);
   return reply.send(successResponse(profile, "프로필이 저장되었습니다"));
 };

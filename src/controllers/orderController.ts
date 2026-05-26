@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { JwtPayload } from "../types/commonTypes";
 import { CreateOrderDto } from "../types/orderTypes";
 import {
   getMyOrders,
@@ -15,7 +14,7 @@ export const getMyOrdersHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const user = req.user as JwtPayload;
+  const user = req.user;
   const orders = await getMyOrders(user.id);
   return reply.send(successResponse(orders));
 };
@@ -25,7 +24,7 @@ export const getOrderHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const order = await getOrderById(user.id, req.params.id);
     return reply.send(successResponse(order));
   } catch (err: unknown) {
@@ -44,7 +43,7 @@ export const createOrderHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     const order = await createOrder(user.id, req.body);
     return reply
       .code(201)
@@ -71,7 +70,7 @@ export const cancelOrderHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = req.user as JwtPayload;
+    const user = req.user;
     await cancelOrder(user.id, req.params.id);
     return reply.send(successResponse(null, "주문이 취소되었습니다"));
   } catch (err: unknown) {
