@@ -9,7 +9,9 @@ export const authenticate = async (
   try {
     await req.jwtVerify();
   } catch {
-    reply.code(401).send({ success: false, message: "인증이 필요합니다" });
+    return reply
+      .code(401)
+      .send({ success: false, message: "인증이 필요합니다" });
   }
 };
 
