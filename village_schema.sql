@@ -433,11 +433,13 @@ CREATE TABLE files (
     file_url      VARCHAR(500) NOT NULL,
     mime_type     VARCHAR(100) NOT NULL,
     file_size     BIGINT       NOT NULL,
-    storage_type  VARCHAR(20)  NOT NULL DEFAULT 'LOCAL',
+    storage_type  VARCHAR(20)  NOT NULL DEFAULT 'LOCAL' CHECK (storage_type IN ('LOCAL', 'S3')),
     sort_order    INTEGER      NOT NULL DEFAULT 0,
     is_main_yn    CHAR(1)      NOT NULL DEFAULT 'N' CHECK (is_main_yn IN ('Y', 'N')),
     created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
     created_by    BIGINT       REFERENCES users(id),
+    updated_at    TIMESTAMP,
+    updated_by    BIGINT       REFERENCES users(id),
     deleted_at    TIMESTAMP,
     deleted_by    BIGINT       REFERENCES users(id)
 );
@@ -455,6 +457,8 @@ COMMENT ON COLUMN files.sort_order    IS '그룹 내 표시 순서 (오름차순
 COMMENT ON COLUMN files.is_main_yn    IS '대표 이미지 여부 (Y=대표, 그룹 내 1개만 Y)';
 COMMENT ON COLUMN files.created_at    IS '업로드 일시';
 COMMENT ON COLUMN files.created_by    IS '업로드 사용자 ID';
+COMMENT ON COLUMN files.updated_at    IS '마지막 수정 일시 (수정된 적 없으면 NULL)';
+COMMENT ON COLUMN files.updated_by    IS '마지막 수정자 ID';
 COMMENT ON COLUMN files.deleted_at    IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
 COMMENT ON COLUMN files.deleted_by    IS '삭제 처리자 ID';
 CREATE INDEX idx_files_file_group_id ON files(file_group_id);
@@ -462,9 +466,9 @@ CREATE INDEX idx_files_deleted_at    ON files(deleted_at) WHERE deleted_at IS NU
 CREATE UNIQUE INDEX uidx_files_main  ON files(file_group_id) WHERE is_main_yn = 'Y' AND deleted_at IS NULL;
 
 -- 파일 그룹 FK
-ALTER TABLE products        ADD CONSTRAINT fk_products_file_group        FOREIGN KEY (file_group_id) REFERENCES file_groups(id);
-ALTER TABLE farmer_profiles ADD CONSTRAINT fk_farmer_profiles_file_group FOREIGN KEY (file_group_id) REFERENCES file_groups(id);
-ALTER TABLE village_content ADD CONSTRAINT fk_village_content_file_group FOREIGN KEY (file_group_id) REFERENCES file_groups(id);
+ALTER TABLE products        ADD CONSTRAINT fk_products_file_group        FOREIGN KEY (file_group_id) REFERENCES file_groups(id) ON DELETE SET NULL;
+ALTER TABLE farmer_profiles ADD CONSTRAINT fk_farmer_profiles_file_group FOREIGN KEY (file_group_id) REFERENCES file_groups(id) ON DELETE SET NULL;
+ALTER TABLE village_content ADD CONSTRAINT fk_village_content_file_group FOREIGN KEY (file_group_id) REFERENCES file_groups(id) ON DELETE SET NULL;
 
 -- 공통 코드 그룹
 CREATE TABLE common_code_groups (
