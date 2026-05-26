@@ -287,9 +287,30 @@ COMMENT ON COLUMN user_organizations.deleted_by      IS '삭제 처리자 ID';
 CREATE INDEX idx_user_organizations_user_id         ON user_organizations(user_id);
 CREATE INDEX idx_user_organizations_organization_id ON user_organizations(organization_id);
 
+-- 메뉴 그룹
+CREATE TABLE menu_groups (
+    id         BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code       VARCHAR(50)  NOT NULL UNIQUE,
+    name       VARCHAR(100) NOT NULL,
+    icon       VARCHAR(100),
+    sort_order INTEGER      NOT NULL DEFAULT 0,
+    use_yn     CHAR(1)      NOT NULL DEFAULT 'Y' CHECK (use_yn IN ('Y', 'N')),
+    created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
+    created_by BIGINT       REFERENCES users(id),
+    updated_at TIMESTAMP,
+    updated_by BIGINT       REFERENCES users(id),
+    deleted_at TIMESTAMP,
+    deleted_by BIGINT       REFERENCES users(id)
+);
+COMMENT ON TABLE  menu_groups            IS '메뉴 그룹 (사이드바 카테고리)';
+COMMENT ON COLUMN menu_groups.code       IS '그룹 식별 코드 (예: SYSTEM_ADMIN, SERVICE_ADMIN)';
+COMMENT ON COLUMN menu_groups.use_yn     IS '사용 여부 (Y=사용, N=미사용)';
+CREATE INDEX idx_menu_groups_deleted_at ON menu_groups(deleted_at) WHERE deleted_at IS NULL;
+
 -- 메뉴
 CREATE TABLE menus (
     id          BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    group_id    BIGINT       REFERENCES menu_groups(id),
     parent_id   BIGINT       REFERENCES menus(id),
     name        VARCHAR(100) NOT NULL,
     code        VARCHAR(50)  NOT NULL UNIQUE,
@@ -306,6 +327,7 @@ CREATE TABLE menus (
 );
 COMMENT ON TABLE  menus            IS '메뉴 목록 (계층형, parent_id로 상하위 관계 표현)';
 COMMENT ON COLUMN menus.id         IS '메뉴 고유 식별자 (자동 증가 정수)';
+COMMENT ON COLUMN menus.group_id   IS '메뉴 그룹 ID (menu_groups.id 참조)';
 COMMENT ON COLUMN menus.parent_id  IS '상위 메뉴 ID (NULL이면 최상위)';
 COMMENT ON COLUMN menus.name       IS '메뉴 표시 이름';
 COMMENT ON COLUMN menus.code       IS '메뉴 식별 코드 (예: SHOP, ADMIN_ORDER)';
@@ -322,32 +344,22 @@ COMMENT ON COLUMN menus.deleted_by IS '삭제 처리자 ID';
 CREATE INDEX idx_menus_parent_id  ON menus(parent_id);
 CREATE INDEX idx_menus_deleted_at ON menus(deleted_at) WHERE deleted_at IS NULL;
 
--- 권한 (메뉴 + 액션)
+-- 권한
 CREATE TABLE permissions (
-    id         BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    menu_id    BIGINT       NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
-    action     VARCHAR(20)  NOT NULL,
-    name       VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
-    created_by BIGINT       REFERENCES users(id),
-    updated_at TIMESTAMP,
-    updated_by BIGINT       REFERENCES users(id),
-    deleted_at TIMESTAMP,
-    deleted_by BIGINT       REFERENCES users(id),
-    UNIQUE (menu_id, action)
+    id          BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code        VARCHAR(50)  NOT NULL UNIQUE,
+    name        VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    created_by  BIGINT       REFERENCES users(id),
+    updated_at  TIMESTAMP,
+    updated_by  BIGINT       REFERENCES users(id),
+    deleted_at  TIMESTAMP,
+    deleted_by  BIGINT       REFERENCES users(id)
 );
-COMMENT ON TABLE  permissions            IS '권한 (메뉴 + 액션의 조합)';
-COMMENT ON COLUMN permissions.id         IS '권한 고유 식별자 (자동 증가 정수)';
-COMMENT ON COLUMN permissions.menu_id    IS 'menus.id 참조';
-COMMENT ON COLUMN permissions.action     IS '액션 종류: read=조회, write=등록/수정, delete=삭제, admin=관리 전체';
-COMMENT ON COLUMN permissions.name       IS '권한 설명 (예: 주문 조회, 상품 등록)';
-COMMENT ON COLUMN permissions.created_at IS '권한 생성 일시';
-COMMENT ON COLUMN permissions.created_by IS '생성자 ID';
-COMMENT ON COLUMN permissions.updated_at IS '마지막 수정 일시 (수정된 적 없으면 NULL)';
-COMMENT ON COLUMN permissions.updated_by IS '마지막 수정자 ID';
-COMMENT ON COLUMN permissions.deleted_at IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
-COMMENT ON COLUMN permissions.deleted_by IS '삭제 처리자 ID';
-CREATE INDEX idx_permissions_menu_id    ON permissions(menu_id);
+COMMENT ON TABLE  permissions             IS '권한 (명칭 단위 독립 엔티티)';
+COMMENT ON COLUMN permissions.code        IS '권한 식별 코드 (예: SUPER_ADMIN, ORDER_MANAGER)';
+COMMENT ON COLUMN permissions.description IS '권한 설명';
 CREATE INDEX idx_permissions_deleted_at ON permissions(deleted_at) WHERE deleted_at IS NULL;
 
 -- 조직-권한 매핑
@@ -375,6 +387,27 @@ COMMENT ON COLUMN org_permissions.deleted_at      IS 'NULL이면 유효, 값이 
 COMMENT ON COLUMN org_permissions.deleted_by      IS '삭제 처리자 ID';
 CREATE INDEX idx_org_permissions_organization_id ON org_permissions(organization_id);
 CREATE INDEX idx_org_permissions_permission_id   ON org_permissions(permission_id);
+
+-- 권한별 메뉴 접근 범위
+CREATE TABLE permission_menus (
+    id            BIGINT    GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    permission_id BIGINT    NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    menu_id       BIGINT    NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+    edit_yn       CHAR(1)   NOT NULL DEFAULT 'N' CHECK (edit_yn IN ('Y', 'N')),
+    delete_yn     CHAR(1)   NOT NULL DEFAULT 'N' CHECK (delete_yn IN ('Y', 'N')),
+    created_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by    BIGINT    REFERENCES users(id),
+    updated_at    TIMESTAMP,
+    updated_by    BIGINT    REFERENCES users(id),
+    UNIQUE (permission_id, menu_id)
+);
+COMMENT ON TABLE  permission_menus               IS '권한별 메뉴 접근 범위 (행 존재=읽기, edit_yn/delete_yn으로 수정/삭제 제어)';
+COMMENT ON COLUMN permission_menus.permission_id IS 'permissions.id 참조';
+COMMENT ON COLUMN permission_menus.menu_id       IS 'menus.id 참조';
+COMMENT ON COLUMN permission_menus.edit_yn       IS '수정 가능 여부 (Y=가능)';
+COMMENT ON COLUMN permission_menus.delete_yn     IS '삭제 가능 여부 (Y=가능)';
+CREATE INDEX idx_permission_menus_permission_id ON permission_menus(permission_id);
+CREATE INDEX idx_permission_menus_menu_id       ON permission_menus(menu_id);
 
 -- 마을 콘텐츠
 CREATE TABLE village_content (
