@@ -1,108 +1,86 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import buildApp from '../src/app'
-import { FastifyInstance } from 'fastify'
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock('../src/db/pool', () => ({
+vi.mock("../src/db/pool", () => ({
   pool: { query: vi.fn() },
   query: vi.fn(),
   queryOne: vi.fn(),
   execute: vi.fn(),
-}))
+  withTransaction: vi.fn(),
+  clientQuery: vi.fn(),
+  clientQueryOne: vi.fn(),
+  clientExecute: vi.fn(),
+}));
 
-import * as pool from '../src/db/pool'
+import * as pool from "../src/db/pool";
+import {
+  findUserByLoginId,
+  findUserById,
+  createSession,
+  findSessionByToken,
+  refreshSession,
+  expireSession,
+  updateLastLoginAt,
+} from "../src/repositories/authRepository";
 
-let app: FastifyInstance
+describe("authRepository", () => {
+  beforeEach(() => vi.clearAllMocks());
 
-beforeAll(async () => {
-  app = buildApp()
-  await app.ready()
-})
+  it("findUserByLoginId — pool.queryOne을 올바른 인수로 호출한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
+    await findUserByLoginId("admin01");
+    expect(pool.queryOne).toHaveBeenCalledWith("auth", "findUserByLoginId", {
+      loginId: "admin01",
+    });
+  });
 
-afterAll(async () => {
-  await app.close()
-})
+  it("findUserById — pool.queryOne을 올바른 인수로 호출한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
+    await findUserById("1");
+    expect(pool.queryOne).toHaveBeenCalledWith("auth", "findById", { id: "1" });
+  });
 
-describe('POST /api/auth/register', () => {
-  it('registers a new farmer with status pending', async () => {
-    vi.mocked(pool.queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        id: 'uuid-1',
-        email: 'farmer@test.com',
-        role: 'farmer',
-        status: 'pending',
-        created_at: new Date(),
-      })
+  it("createSession — pool.queryOne을 올바른 인수로 호출한다", async () => {
+    const expiresAt = new Date();
+    vi.mocked(pool.queryOne).mockResolvedValueOnce({ token: "uuid-123" });
+    await createSession({ userId: "1", token: "uuid-123", expiresAt });
+    expect(pool.queryOne).toHaveBeenCalledWith("auth", "createSession", {
+      userId: "1",
+      token: "uuid-123",
+      expiresAt,
+    });
+  });
 
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/register',
-      payload: { email: 'farmer@test.com', password: 'password123', role: 'farmer' },
-    })
+  it("findSessionByToken — pool.queryOne을 올바른 인수로 호출한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
+    await findSessionByToken("uuid-token");
+    expect(pool.queryOne).toHaveBeenCalledWith("auth", "findSessionByToken", {
+      token: "uuid-token",
+    });
+  });
 
-    expect(res.statusCode).toBe(201)
-    const body = JSON.parse(res.body)
-    expect(body.success).toBe(true)
-    expect(body.data.role).toBe('farmer')
-    expect(body.data.status).toBe('pending')
-  })
+  it("refreshSession — pool.execute를 올바른 인수로 호출한다", async () => {
+    const expiresAt = new Date();
+    vi.mocked(pool.execute).mockResolvedValueOnce(1);
+    await refreshSession("uuid-token", expiresAt);
+    expect(pool.execute).toHaveBeenCalledWith("auth", "refreshSession", {
+      token: "uuid-token",
+      expiresAt,
+    });
+  });
 
-  it('returns 409 when email already exists', async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce({
-      id: 'uuid-1',
-      email: 'farmer@test.com',
-    })
+  it("expireSession — pool.execute를 올바른 인수로 호출한다", async () => {
+    vi.mocked(pool.execute).mockResolvedValueOnce(1);
+    await expireSession("uuid-token");
+    expect(pool.execute).toHaveBeenCalledWith("auth", "expireSession", {
+      token: "uuid-token",
+    });
+  });
 
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/register',
-      payload: { email: 'farmer@test.com', password: 'password123', role: 'farmer' },
-    })
-
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('returns 400 for invalid role', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/register',
-      payload: { email: 'test@test.com', password: 'password123', role: 'admin' },
-    })
-    expect(res.statusCode).toBe(400)
-  })
-})
-
-describe('POST /api/auth/login', () => {
-  it('returns 401 for non-existent email', async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(null)
-
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/login',
-      payload: { email: 'nobody@test.com', password: 'password123' },
-    })
-
-    expect(res.statusCode).toBe(401)
-  })
-})
-
-describe('POST /api/auth/refresh', () => {
-  it('returns 401 for invalid refresh token', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/refresh',
-      payload: { refreshToken: 'invalid-token' },
-    })
-    expect(res.statusCode).toBe(401)
-  })
-})
-
-describe('POST /api/auth/logout', () => {
-  it('returns 401 without token', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/auth/logout',
-    })
-    expect(res.statusCode).toBe(401)
-  })
-})
+  it("updateLastLoginAt — pool.execute를 올바른 인수로 호출한다", async () => {
+    vi.mocked(pool.execute).mockResolvedValueOnce(1);
+    await updateLastLoginAt("1");
+    expect(pool.execute).toHaveBeenCalledWith("auth", "updateLastLoginAt", {
+      userId: "1",
+    });
+  });
+});

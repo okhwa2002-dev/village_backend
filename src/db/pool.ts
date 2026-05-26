@@ -2,10 +2,29 @@ import { Pool, PoolClient } from "pg";
 import mybatisMapper from "mybatis-mapper";
 import path from "path";
 
-type Params = Record<
+type ParamValue =
+  | string
+  | number
+  | boolean
+  | Date
+  | string[]
+  | number[]
+  | null
+  | undefined;
+type Params = Record<string, ParamValue>;
+
+type MapperParams = Record<
   string,
   string | number | boolean | string[] | number[] | null | undefined
 >;
+
+function normalizeParams(params: Params): MapperParams {
+  const result: MapperParams = {};
+  for (const [key, value] of Object.entries(params)) {
+    result[key] = value instanceof Date ? value.toISOString() : value;
+  }
+  return result;
+}
 
 export const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
@@ -36,7 +55,12 @@ export const query = async <T = Record<string, unknown>>(
   sqlId: string,
   params: Params = {},
 ): Promise<T[]> => {
-  const sql = mybatisMapper.getStatement(namespace, sqlId, params, format);
+  const sql = mybatisMapper.getStatement(
+    namespace,
+    sqlId,
+    normalizeParams(params),
+    format,
+  );
   const result = await pool.query(sql);
   return result.rows as T[];
 };
@@ -55,7 +79,12 @@ export const execute = async (
   sqlId: string,
   params: Params = {},
 ): Promise<number> => {
-  const sql = mybatisMapper.getStatement(namespace, sqlId, params, format);
+  const sql = mybatisMapper.getStatement(
+    namespace,
+    sqlId,
+    normalizeParams(params),
+    format,
+  );
   const result = await pool.query(sql);
   return result.rowCount ?? 0;
 };
@@ -83,7 +112,12 @@ export const clientQuery = async <T = Record<string, unknown>>(
   sqlId: string,
   params: Params = {},
 ): Promise<T[]> => {
-  const sql = mybatisMapper.getStatement(namespace, sqlId, params, format);
+  const sql = mybatisMapper.getStatement(
+    namespace,
+    sqlId,
+    normalizeParams(params),
+    format,
+  );
   const result = await client.query(sql);
   return result.rows as T[];
 };
@@ -104,7 +138,12 @@ export const clientExecute = async (
   sqlId: string,
   params: Params = {},
 ): Promise<number> => {
-  const sql = mybatisMapper.getStatement(namespace, sqlId, params, format);
+  const sql = mybatisMapper.getStatement(
+    namespace,
+    sqlId,
+    normalizeParams(params),
+    format,
+  );
   const result = await client.query(sql);
   return result.rowCount ?? 0;
 };

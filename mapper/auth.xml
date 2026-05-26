@@ -3,22 +3,58 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="auth">
 
-  <select id="findByEmail">
-    SELECT id, email, password, role, status, created_at
-    FROM users
-    WHERE email = #{email}
+  <select id="findUserByLoginId">
+    SELECT id, login_id, email, password, name, phone, role, status,
+           last_login_at, password_changed_at, created_at
+    FROM   users
+    WHERE  login_id    = #{loginId}
+      AND  deleted_at IS NULL
   </select>
 
   <select id="findById">
-    SELECT id, email, role, status, created_at
-    FROM users
-    WHERE id = #{id}
+    SELECT id, login_id, email, name, phone, role, status, created_at
+    FROM   users
+    WHERE  id          = #{id}
+      AND  deleted_at IS NULL
   </select>
 
   <insert id="createUser">
-    INSERT INTO users (email, password, role, status)
-    VALUES (#{email}, #{password}, #{role}, #{status})
-    RETURNING id, email, role, status, created_at
+    INSERT INTO users (login_id, password, role, status, name, phone, email)
+    VALUES (#{loginId}, #{password}, #{role}, #{status}, #{name}, #{phone}, #{email})
+    RETURNING id, login_id, email, name, phone, role, status, created_at
   </insert>
+
+  <insert id="createSession">
+    INSERT INTO user_sessions (user_id, token, expires_at)
+    VALUES (#{userId}, #{token}, #{expiresAt})
+    RETURNING id, user_id, token, expires_at, created_at
+  </insert>
+
+  <select id="findSessionByToken">
+    SELECT s.id, s.user_id, s.token, s.expires_at,
+           u.login_id, u.name, u.role, u.status
+    FROM   user_sessions s
+    JOIN   users u ON u.id = s.user_id AND u.deleted_at IS NULL
+    WHERE  s.token      = #{token}
+      AND  s.expires_at > NOW()
+  </select>
+
+  <update id="refreshSession">
+    UPDATE user_sessions
+    SET    expires_at = #{expiresAt}
+    WHERE  token      = #{token}
+  </update>
+
+  <update id="expireSession">
+    UPDATE user_sessions
+    SET    expires_at = NOW()
+    WHERE  token      = #{token}
+  </update>
+
+  <update id="updateLastLoginAt">
+    UPDATE users
+    SET    last_login_at = NOW()
+    WHERE  id = #{userId}
+  </update>
 
 </mapper>
