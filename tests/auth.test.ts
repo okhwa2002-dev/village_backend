@@ -114,15 +114,13 @@ describe("authService.register", () => {
   });
 
   it("farmer 가입 시 status=pending으로 생성된다", async () => {
-    vi.mocked(pool.queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        id: "1",
-        login_id: "farmer01",
-        role: "farmer",
-        status: "pending",
-        created_at: new Date(),
-      });
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: "1",
+      login_id: "farmer01",
+      role: "farmer",
+      status: "pending",
+      created_at: new Date(),
+    });
 
     const result = await register({
       login_id: "farmer01",
@@ -145,15 +143,13 @@ describe("authService.register", () => {
   });
 
   it("consumer 가입 시 status=active로 생성된다", async () => {
-    vi.mocked(pool.queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        id: "2",
-        login_id: "consumer01",
-        role: "consumer",
-        status: "active",
-        created_at: new Date(),
-      });
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: "2",
+      login_id: "consumer01",
+      role: "consumer",
+      status: "active",
+      created_at: new Date(),
+    });
 
     const result = await register({
       login_id: "consumer01",
@@ -225,6 +221,8 @@ describe("authService.login", () => {
 });
 
 describe("authService.logout", () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it("expireSession을 호출한다", async () => {
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
     await logout("uuid-token");
