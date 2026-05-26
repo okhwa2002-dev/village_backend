@@ -10,7 +10,7 @@ CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'shipped', 'delivered'
 -- 사용자
 CREATE TABLE users (
     id                   BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    login_id             VARCHAR(50)  NOT NULL UNIQUE,
+    login_id             VARCHAR(50)  NOT NULL,
     email                VARCHAR(255),
     password             VARCHAR(255) NOT NULL,
     name                 VARCHAR(100),
@@ -52,8 +52,8 @@ CREATE TABLE user_sessions (
 COMMENT ON TABLE  user_sessions            IS '로그인 세션 (슬라이딩 만료)';
 COMMENT ON COLUMN user_sessions.token      IS 'UUID 세션 토큰';
 COMMENT ON COLUMN user_sessions.expires_at IS '만료 일시 — 로그아웃 시 NOW()로 갱신';
-CREATE INDEX idx_user_sessions_token      ON user_sessions(token);
 CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at);
+CREATE INDEX idx_user_sessions_user_id   ON user_sessions(user_id);
 
 -- 농민 프로필
 CREATE TABLE farmer_profiles (

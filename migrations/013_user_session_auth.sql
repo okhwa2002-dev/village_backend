@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     expires_at TIMESTAMP   NOT NULL,
     created_at TIMESTAMP   NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_user_sessions_token
-    ON user_sessions(token);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at
     ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id
+    ON user_sessions(user_id);
