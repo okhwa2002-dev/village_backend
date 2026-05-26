@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 
 vi.mock("../src/db/pool", () => ({
   pool: { query: vi.fn() },
@@ -118,5 +126,96 @@ describe("fileService", () => {
         "FILE_NOT_FOUND",
       );
     });
+  });
+});
+
+import buildApp from "../src/app";
+import { FastifyInstance } from "fastify";
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = buildApp();
+  await app.ready();
+});
+
+afterAll(async () => {
+  await app.close();
+});
+
+describe("POST /api/file-groups", () => {
+  it("인증 없이 요청하면 401을 반환한다", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/file-groups",
+      payload: { refType: "PRODUCT" },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("유효한 토큰으로 파일 그룹을 생성한다", async () => {
+    const mockGroup = { id: "1", ref_type: "PRODUCT", created_at: new Date() };
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockGroup);
+
+    const token = app.jwt.sign({
+      id: "1",
+      email: "user@test.com",
+      role: "farmer",
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/file-groups",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { refType: "PRODUCT" },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data.ref_type).toBe("PRODUCT");
+  });
+});
+
+describe("GET /api/file-groups/:id/files", () => {
+  it("파일 목록을 반환한다", async () => {
+    const mockFiles = [
+      {
+        id: "1",
+        file_group_id: "10",
+        original_name: "test.jpg",
+        is_main_yn: "Y",
+        sort_order: 0,
+      },
+    ];
+    vi.mocked(pool.query).mockResolvedValueOnce(mockFiles);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/file-groups/10/files",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data).toHaveLength(1);
+  });
+});
+
+describe("DELETE /api/files/:id", () => {
+  it("파일이 없으면 404를 반환한다", async () => {
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
+
+    const token = app.jwt.sign({
+      id: "1",
+      email: "user@test.com",
+      role: "farmer",
+    });
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/files/999",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(404);
   });
 });
