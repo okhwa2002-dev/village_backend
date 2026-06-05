@@ -37,7 +37,7 @@ export default async function fileRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ["File"],
-        summary: "파일 업로드 (multipart/form-data)",
+        summary: "파일 업로드 (multipart/form-data, 다중 파일 지원)",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
       },
@@ -65,7 +65,7 @@ export default async function fileRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ["File"],
-        summary: "파일 정보 수정 (순서, 대표 이미지)",
+        summary: "파일 정보 수정 (정렬, 대표 이미지)",
         security: [{ bearerAuth: [] }],
         body: {
           type: "object",

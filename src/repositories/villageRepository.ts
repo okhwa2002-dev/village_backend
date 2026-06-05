@@ -11,6 +11,7 @@ const toVillageContent = (row: any): VillageContent => ({
   sortOrder: row.sort_order,
   publishedYn: row.published_yn,
   updatedAt: row.updated_at,
+  files: [],
 });
 
 export const findAllContents = async (): Promise<VillageContent[]> => {
@@ -28,6 +29,13 @@ export const findContentsBySection = async (
 export const findAllContentsForAdmin = async (): Promise<VillageContent[]> => {
   const rows = await query<any>("village", "findAllForAdmin");
   return rows.map(toVillageContent);
+};
+
+export const findContentById = async (
+  id: string,
+): Promise<VillageContent | null> => {
+  const row = await queryOne<any>("village", "findById", { id });
+  return row ? toVillageContent(row) : null;
 };
 
 export const createContent = async (params: {
@@ -49,7 +57,7 @@ export const updateContent = async (params: {
   body?: string;
   fileGroupId?: string;
   sortOrder?: number;
-  published?: boolean;
+  publishedYn?: string;
 }): Promise<VillageContent | null> => {
   const row = await queryOne<any>("village", "update", params);
   return row ? toVillageContent(row) : null;

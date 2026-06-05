@@ -22,7 +22,7 @@ export default async function villageRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { section: string } }>(
     "/village/:section",
-    { schema: { tags: ["Village"], summary: "섹션별 콘텐츠" } },
+    { schema: { tags: ["Village"], summary: "섹션별 콘텐츠 목록" } },
     getContentsBySectionHandler,
   );
 
@@ -44,20 +44,9 @@ export default async function villageRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ["Admin"],
-        summary: "콘텐츠 추가",
+        summary: "콘텐츠 추가 (JSON 또는 multipart/form-data)",
         security: [{ bearerAuth: [] }],
-        body: {
-          type: "object",
-          required: ["section", "title"],
-          properties: {
-            section: { type: "string" },
-            title: { type: "string" },
-            body: { type: "string" },
-            fileGroupId: { type: "string" },
-            sort_order: { type: "integer" },
-            publishedYn: { type: "string", enum: ["Y", "N"] },
-          },
-        },
+        consumes: ["application/json", "multipart/form-data"],
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
@@ -69,19 +58,9 @@ export default async function villageRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ["Admin"],
-        summary: "콘텐츠 수정",
+        summary: "콘텐츠 수정 (JSON 또는 multipart/form-data)",
         security: [{ bearerAuth: [] }],
-        body: {
-          type: "object",
-          properties: {
-            section: { type: "string" },
-            title: { type: "string" },
-            body: { type: "string" },
-            fileGroupId: { type: "string" },
-            sort_order: { type: "integer" },
-            publishedYn: { type: "string", enum: ["Y", "N"] },
-          },
-        },
+        consumes: ["application/json", "multipart/form-data"],
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },

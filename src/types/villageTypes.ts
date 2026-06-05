@@ -1,3 +1,5 @@
+import { FileRecord } from "./fileTypes";
+
 export interface VillageContent {
   id: string;
   section: string;
@@ -8,6 +10,7 @@ export interface VillageContent {
   sortOrder: number;
   publishedYn: string;
   updatedAt: Date;
+  files: FileRecord[];
 }
 
 export interface CreateVillageContentDto {

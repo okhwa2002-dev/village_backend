@@ -4,7 +4,6 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import multipart from "@fastify/multipart";
 import staticFiles from "@fastify/static";
-import path from "path";
 import authRoutes from "./routes/authRoutes";
 import farmerRoutes from "./routes/farmerRoutes";
 import productRoutes from "./routes/productRoutes";
@@ -14,6 +13,12 @@ import villageRoutes from "./routes/villageRoutes";
 import fileRoutes from "./routes/fileRoutes";
 import commonCodeRoutes from "./routes/commonCodeRoutes";
 import menuRoutes from "./routes/menuRoutes";
+import {
+  fileUrlPrefix,
+  multipartFilesLimit,
+  multipartFileSizeLimit,
+  uploadRoot,
+} from "./config/uploadConfig";
 
 export default function buildApp(): FastifyInstance {
   const isDev = process.env.NODE_ENV !== "test";
@@ -53,10 +58,15 @@ export default function buildApp(): FastifyInstance {
 
   app.register(swaggerUi, { routePrefix: "/docs" });
 
-  app.register(multipart);
+  app.register(multipart, {
+    limits: {
+      fileSize: multipartFileSizeLimit,
+      files: multipartFilesLimit,
+    },
+  });
   app.register(staticFiles, {
-    root: path.join(process.cwd(), "uploads"),
-    prefix: "/files/",
+    root: uploadRoot,
+    prefix: fileUrlPrefix,
   });
 
   app.register(authRoutes, { prefix: "/api" });

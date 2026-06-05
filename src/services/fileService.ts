@@ -9,7 +9,7 @@ import {
   softDeleteFile,
 } from "../repositories/fileRepository";
 import { saveFile, removeFile } from "./storage/localStorageAdapter";
-import { FileRefType } from "../types/fileTypes";
+import { FileRecord, FileRefType } from "../types/fileTypes";
 
 export const createGroup = async (refType: FileRefType, userId: string) => {
   const group = await createFileGroup({ refType, createdBy: userId });
@@ -57,8 +57,78 @@ export const uploadFile = async (params: {
   return file;
 };
 
+export const uploadFiles = async (params: {
+  fileGroupId: string;
+  files: Array<{
+    buffer: Buffer;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+  }>;
+  mainIndex?: number;
+  sortStartOrder: number;
+  userId: string;
+}) => {
+  const group = await findFileGroupById(params.fileGroupId);
+  if (!group) throw new Error("FILE_GROUP_NOT_FOUND");
+  if (params.files.length === 0) throw new Error("FILE_REQUIRED");
+
+  if (
+    params.mainIndex !== undefined &&
+    (params.mainIndex < 0 || params.mainIndex >= params.files.length)
+  ) {
+    throw new Error("INVALID_MAIN_INDEX");
+  }
+
+  if (params.mainIndex !== undefined) {
+    await clearMainYn(params.fileGroupId);
+  }
+
+  const uploadedFiles = [];
+  for (const [index, multipartFile] of params.files.entries()) {
+    const saved = await saveFile(
+      multipartFile.buffer,
+      multipartFile.originalName,
+      group.refType,
+    );
+
+    const file = await createFile({
+      fileGroupId: params.fileGroupId,
+      originalName: multipartFile.originalName,
+      storedName: saved.storedName,
+      filePath: saved.filePath,
+      fileUrl: saved.fileUrl,
+      mimeType: multipartFile.mimeType,
+      fileSize: multipartFile.fileSize,
+      storageType: "LOCAL",
+      sortOrder: params.sortStartOrder + index,
+      isMainYn: params.mainIndex === index ? "Y" : "N",
+      createdBy: params.userId,
+    });
+    if (!file) throw new Error("FILE_CREATE_FAILED");
+    uploadedFiles.push(file);
+  }
+
+  return {
+    fileGroupId: params.fileGroupId,
+    files: uploadedFiles,
+  };
+};
+
 export const getFilesByGroup = (fileGroupId: string) =>
   findFilesByGroupId(fileGroupId);
+
+export const getFilesByGroupMap = async (fileGroupIds: string[]) => {
+  const uniqueGroupIds = Array.from(new Set(fileGroupIds.filter(Boolean)));
+  const entries: Array<[string, FileRecord[]]> = await Promise.all(
+    uniqueGroupIds.map(async (fileGroupId) => [
+      fileGroupId,
+      await findFilesByGroupId(fileGroupId),
+    ] as [string, FileRecord[]]),
+  );
+
+  return new Map(entries);
+};
 
 export const patchFile = async (params: {
   id: string;

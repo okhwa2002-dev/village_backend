@@ -39,6 +39,17 @@
     ORDER BY vc.section, vc.sort_order
   </select>
 
+  <select id="findById">
+    SELECT vc.id, vc.section, vc.title, vc.body, vc.file_group_id,
+           f.file_url AS image_url, vc.sort_order, vc.published_yn, vc.updated_at
+    FROM village_content vc
+    LEFT JOIN files f ON f.file_group_id = vc.file_group_id
+                     AND f.is_main_yn = 'Y'
+                     AND f.deleted_at IS NULL
+    WHERE vc.id = #{id}
+      AND vc.deleted_at IS NULL
+  </select>
+
   <insert id="create">
     INSERT INTO village_content (section, title, body, file_group_id, sort_order, published_yn)
     VALUES (#{section}, #{title}, #{body}, #{fileGroupId}, #{sortOrder}, #{publishedYn})

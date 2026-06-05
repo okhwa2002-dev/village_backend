@@ -2,10 +2,12 @@ import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { FileRefType } from "../../types/fileTypes";
-
-const UPLOAD_ROOT = path.resolve(
-  process.env.UPLOAD_DIR ?? path.join(process.cwd(), "uploads"),
-);
+import {
+  uploadRoot,
+  toStoredRelativePath,
+  toFileUrl,
+  toUploadRootRelativePath,
+} from "../../config/uploadConfig";
 
 const ALLOWED_REF_TYPES: ReadonlySet<string> = new Set([
   "PRODUCT",
@@ -40,7 +42,7 @@ export const saveFile = async (
   const rawExt = path.extname(originalName).toLowerCase();
   const ext = ALLOWED_EXT.has(rawExt) ? rawExt : ".bin";
   const storedName = `${uuidv4()}${ext}`;
-  const subDir = path.join(UPLOAD_ROOT, refType.toLowerCase());
+  const subDir = path.join(uploadRoot, refType.toLowerCase());
 
   try {
     await mkdir(subDir, { recursive: true });
@@ -56,14 +58,17 @@ export const saveFile = async (
 
   return {
     storedName,
-    filePath: `uploads/${refType.toLowerCase()}/${storedName}`,
-    fileUrl: `/files/${refType.toLowerCase()}/${storedName}`,
+    filePath: toStoredRelativePath(refType.toLowerCase(), storedName),
+    fileUrl: toFileUrl(refType.toLowerCase(), storedName),
   };
 };
 
 export const removeFile = async (filePath: string): Promise<void> => {
-  const absolutePath = path.resolve(process.cwd(), filePath);
-  if (!absolutePath.startsWith(UPLOAD_ROOT + path.sep)) {
+  const absolutePath = path.resolve(
+    uploadRoot,
+    toUploadRootRelativePath(filePath),
+  );
+  if (!absolutePath.startsWith(uploadRoot + path.sep)) {
     throw new Error("INVALID_FILE_PATH");
   }
   try {

@@ -1,13 +1,16 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import "@fastify/multipart";
 import { FileRefType, PatchFileDto } from "../types/fileTypes";
 import {
   createGroup,
-  uploadFile,
+  uploadFiles,
   getFilesByGroup,
   patchFile,
   removeFileById,
 } from "../services/fileService";
+import {
+  parseMultipartWithFiles,
+  toNumberOrDefault,
+} from "../utils/multipartParser";
 import { successResponse, errorResponse } from "../utils/response";
 
 export const createFileGroupHandler = async (
@@ -27,36 +30,49 @@ export const uploadFileHandler = async (
 ) => {
   try {
     const user = req.user;
-    const data = await req.file();
-    if (!data) return reply.code(400).send(errorResponse("파일이 없습니다"));
+    const { fields, files } = await parseMultipartWithFiles(req);
 
-    const fileGroupIdField = data.fields.fileGroupId as any;
-    const isMainYnField = data.fields.isMainYn as any;
-    const sortOrderField = data.fields.sortOrder as any;
-
-    if (!fileGroupIdField?.value) {
+    if (!fields.fileGroupId) {
       return reply.code(400).send(errorResponse("fileGroupId가 필요합니다"));
     }
 
-    const buffer = await data.toBuffer();
-    const file = await uploadFile({
-      fileGroupId: fileGroupIdField.value,
-      buffer,
-      originalName: data.filename,
-      mimeType: data.mimetype,
-      fileSize: buffer.length,
-      isMainYn: isMainYnField?.value === "Y" ? "Y" : "N",
-      sortOrder: Number(sortOrderField?.value ?? 0),
+    if (files.length === 0) {
+      return reply.code(400).send(errorResponse("파일이 없습니다"));
+    }
+
+    const mainIndex =
+      fields.mainIndex !== undefined
+        ? toNumberOrDefault(fields.mainIndex, -1)
+        : fields.isMainYn === "Y" && files.length === 1
+          ? 0
+          : undefined;
+
+    const result = await uploadFiles({
+      fileGroupId: fields.fileGroupId,
+      files,
+      mainIndex,
+      sortStartOrder: toNumberOrDefault(
+        fields.sortStartOrder ?? fields.sortOrder,
+        0,
+      ),
       userId: user.id,
     });
+
     return reply
       .code(201)
-      .send(successResponse(file, "파일이 업로드되었습니다"));
+      .send(successResponse(result, "파일이 업로드되었습니다"));
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === "FILE_GROUP_NOT_FOUND")
+    if (err instanceof Error && err.message === "FILE_GROUP_NOT_FOUND") {
       return reply
         .code(404)
         .send(errorResponse("파일 그룹을 찾을 수 없습니다"));
+    }
+    if (err instanceof Error && err.message === "INVALID_MAIN_INDEX") {
+      return reply.code(400).send(errorResponse("mainIndex가 잘못되었습니다"));
+    }
+    if (err instanceof Error && err.message === "FILE_REQUIRED") {
+      return reply.code(400).send(errorResponse("파일이 없습니다"));
+    }
     throw err;
   }
 };
@@ -83,8 +99,9 @@ export const patchFileHandler = async (
     });
     return reply.send(successResponse(file, "파일이 수정되었습니다"));
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === "FILE_NOT_FOUND")
+    if (err instanceof Error && err.message === "FILE_NOT_FOUND") {
       return reply.code(404).send(errorResponse("파일을 찾을 수 없습니다"));
+    }
     throw err;
   }
 };
@@ -98,8 +115,9 @@ export const deleteFileHandler = async (
     await removeFileById(req.params.id, user.id);
     return reply.send(successResponse(null, "파일이 삭제되었습니다"));
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === "FILE_NOT_FOUND")
+    if (err instanceof Error && err.message === "FILE_NOT_FOUND") {
       return reply.code(404).send(errorResponse("파일을 찾을 수 없습니다"));
+    }
     throw err;
   }
 };
