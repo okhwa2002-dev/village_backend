@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: village_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: village_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: village1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - village_db_data:/var/lib/postgresql/data
+      - ./village_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+volumes:
+  village_db_data:
