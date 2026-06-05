@@ -24,38 +24,44 @@
     RETURNING id, login_id, email, name, phone, role, status, created_at
   </insert>
 
-  <insert id="createSession">
-    INSERT INTO user_sessions (user_id, token, expires_at)
-    VALUES (#{userId}, #{token}, #{expiresAt})
-    RETURNING id, user_id, token, expires_at, created_at
-  </insert>
-
-  <select id="findSessionByToken">
-    SELECT s.id, s.user_id, s.token, s.expires_at,
-           u.login_id, u.name, u.role, u.status
-    FROM   user_sessions s
-    JOIN   users u ON u.id = s.user_id AND u.deleted_at IS NULL
-    WHERE  s.token      = #{token}
-      AND  s.expires_at > NOW()
-      AND  u.status     = 'active'
-  </select>
-
-  <update id="refreshSession">
-    UPDATE user_sessions
-    SET    expires_at = #{expiresAt}
-    WHERE  token      = #{token}
-  </update>
-
-  <update id="expireSession">
-    UPDATE user_sessions
-    SET    expires_at = NOW()
-    WHERE  token      = #{token}
-  </update>
-
   <update id="updateLastLoginAt">
     UPDATE users
     SET    last_login_at = NOW()
     WHERE  id = #{userId}
+  </update>
+
+  <insert id="saveRefreshToken">
+    INSERT INTO user_refresh_tokens (user_id, token_hash, family_id, expires_at)
+    VALUES (#{userId}, #{tokenHash}, #{familyId}::uuid, #{expiresAt})
+  </insert>
+
+  <select id="findRefreshToken">
+    SELECT rt.id, rt.user_id, rt.token_hash, rt.family_id,
+           rt.expires_at, rt.revoked_at, rt.created_at,
+           u.login_id, u.name, u.role, u.status
+    FROM   user_refresh_tokens rt
+    JOIN   users u ON u.id = rt.user_id AND u.deleted_at IS NULL
+    WHERE  rt.token_hash = #{tokenHash}
+  </select>
+
+  <update id="revokeToken">
+    UPDATE user_refresh_tokens
+    SET    revoked_at = NOW()
+    WHERE  token_hash = #{tokenHash}
+  </update>
+
+  <update id="revokeFamily">
+    UPDATE user_refresh_tokens
+    SET    revoked_at = NOW()
+    WHERE  family_id  = #{familyId}::uuid
+      AND  revoked_at IS NULL
+  </update>
+
+  <update id="revokeAllUserTokens">
+    UPDATE user_refresh_tokens
+    SET    revoked_at = NOW()
+    WHERE  user_id    = #{userId}
+      AND  revoked_at IS NULL
   </update>
 
 </mapper>

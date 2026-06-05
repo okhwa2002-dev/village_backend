@@ -20,7 +20,7 @@ export const getMyOrders = (userId: string) => findOrdersByUserId(userId);
 export const getOrderById = async (userId: string, orderId: string) => {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("ORDER_NOT_FOUND");
-  if (order.user_id !== userId) throw new Error("FORBIDDEN");
+  if (order.userId !== userId) throw new Error("FORBIDDEN");
   const items = await findOrderItems(orderId);
   return { ...order, items };
 };
@@ -46,7 +46,7 @@ export const createOrder = async (userId: string, dto: CreateOrderDto) => {
         },
       );
       if (!product) throw new Error("PRODUCT_NOT_FOUND");
-      if (product.status !== "active") throw new Error("PRODUCT_NOT_AVAILABLE");
+      if (product.status !== "ACTIVE") throw new Error("PRODUCT_NOT_AVAILABLE");
       if (product.stock < item.quantity) throw new Error("INSUFFICIENT_STOCK");
 
       totalPrice += product.price * item.quantity;
@@ -81,10 +81,10 @@ export const createOrder = async (userId: string, dto: CreateOrderDto) => {
 export const cancelOrder = async (userId: string, orderId: string) => {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("ORDER_NOT_FOUND");
-  if (order.user_id !== userId) throw new Error("FORBIDDEN");
-  if (!["pending", "confirmed"].includes(order.status))
+  if (order.userId !== userId) throw new Error("FORBIDDEN");
+  if (!["PENDING", "CONFIRMED"].includes(order.status))
     throw new Error("CANNOT_CANCEL");
-  await updateOrderStatus(orderId, "cancelled");
+  await updateOrderStatus(orderId, "CANCELLED");
 };
 
 export const getAllOrdersForAdmin = () => findAllOrdersForAdmin();

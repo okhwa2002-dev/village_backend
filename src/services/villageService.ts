@@ -23,9 +23,9 @@ export const createVillageContent = (dto: CreateVillageContentDto) =>
     section: dto.section,
     title: dto.title,
     body: dto.body,
-    imageUrl: dto.image_url,
-    sortOrder: dto.sort_order ?? 0,
-    published: dto.published ?? false,
+    fileGroupId: dto.fileGroupId,
+    sortOrder: dto.sortOrder ?? 0,
+    publishedYn: dto.publishedYn ?? "N",
   });
 
 export const updateVillageContent = async (
@@ -37,9 +37,9 @@ export const updateVillageContent = async (
     section: dto.section,
     title: dto.title,
     body: dto.body,
-    imageUrl: dto.image_url,
-    sortOrder: dto.sort_order,
-    published: dto.published,
+    fileGroupId: dto.fileGroupId,
+    sortOrder: dto.sortOrder,
+    publishedYn: dto.publishedYn,
   });
   if (!content) throw new Error("CONTENT_NOT_FOUND");
   return content;

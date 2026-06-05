@@ -4,51 +4,65 @@
 <mapper namespace="farmer">
 
   <select id="findAll">
-    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description, u.email
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.file_group_id, fp.farm_description, u.email
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
-    WHERE u.status = 'active'
+    WHERE u.status = 'ACTIVE'
+      AND fp.deleted_at IS NULL
     ORDER BY fp.name
   </select>
 
   <select id="findById">
-    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.file_group_id, fp.farm_description,
            u.email, u.status
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
     WHERE fp.id = #{id}
+      AND fp.deleted_at IS NULL
   </select>
 
   <select id="findByUserId">
-    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.file_group_id, fp.farm_description,
            u.email, u.status
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
     WHERE fp.user_id = #{userId}
+      AND fp.deleted_at IS NULL
   </select>
 
   <insert id="create">
-    INSERT INTO farmer_profiles (user_id, name, bio, photo_url, farm_description)
-    VALUES (#{userId}, #{name}, #{bio}, #{photoUrl}, #{farmDescription})
-    RETURNING id, user_id, name, bio, photo_url, farm_description
+    INSERT INTO farmer_profiles (user_id, name, bio, file_group_id, farm_description)
+    VALUES (#{userId}, #{name}, #{bio}, #{fileGroupId}, #{farmDescription})
+    RETURNING id, user_id, name, bio, file_group_id, farm_description
   </insert>
 
   <update id="update">
     UPDATE farmer_profiles
     SET name             = COALESCE(#{name}, name),
         bio              = COALESCE(#{bio}, bio),
-        photo_url        = COALESCE(#{photoUrl}, photo_url),
-        farm_description = COALESCE(#{farmDescription}, farm_description)
+        file_group_id    = COALESCE(#{fileGroupId}, file_group_id),
+        farm_description = COALESCE(#{farmDescription}, farm_description),
+        updated_at       = NOW()
     WHERE user_id = #{userId}
-    RETURNING id, user_id, name, bio, photo_url, farm_description
+      AND deleted_at IS NULL
+    RETURNING id, user_id, name, bio, file_group_id, farm_description
   </update>
 
+  <select id="countForAdmin">
+    SELECT COUNT(*) AS total
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    WHERE fp.deleted_at IS NULL
+  </select>
+
   <select id="findAllForAdmin">
-    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.photo_url, fp.farm_description,
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.file_group_id, fp.farm_description,
            u.email, u.status, u.created_at
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
+    WHERE fp.deleted_at IS NULL
     ORDER BY u.created_at DESC
+    LIMIT #{limit} OFFSET #{offset}
   </select>
 
   <update id="updateUserStatus">

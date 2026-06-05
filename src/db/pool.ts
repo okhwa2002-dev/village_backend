@@ -46,9 +46,24 @@ mybatisMapper.createMapper([
   `${mapperDir}/village.xml`,
   `${mapperDir}/file.xml`,
   `${mapperDir}/permission.xml`,
+  `${mapperDir}/commonCode.xml`,
+  `${mapperDir}/menu.xml`,
 ]);
 
-const format = { language: "sql" as const, indent: "  " };
+// mybatis-mapper types are outdated; "postgresql" is supported at runtime
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const format = { language: "postgresql", indent: "  " } as any;
+
+const isLogging = process.env.NODE_ENV !== "test";
+
+const logSql = (namespace: string, sqlId: string, sql: string) => {
+  if (!isLogging) return;
+  console.log(`\x1b[36m[SQL]\x1b[0m ${namespace}.${sqlId}\n${sql.trim()}`);
+};
+
+const logSqlError = (namespace: string, sqlId: string, err: unknown) => {
+  console.error(`\x1b[31m[SQL ERROR]\x1b[0m ${namespace}.${sqlId}`, err);
+};
 
 export const query = async <T = Record<string, unknown>>(
   namespace: string,
@@ -61,8 +76,14 @@ export const query = async <T = Record<string, unknown>>(
     normalizeParams(params),
     format,
   );
-  const result = await pool.query(sql);
-  return result.rows as T[];
+  logSql(namespace, sqlId, sql);
+  try {
+    const result = await pool.query(sql);
+    return result.rows as T[];
+  } catch (err) {
+    logSqlError(namespace, sqlId, err);
+    throw err;
+  }
 };
 
 export const queryOne = async <T = Record<string, unknown>>(
@@ -85,8 +106,14 @@ export const execute = async (
     normalizeParams(params),
     format,
   );
-  const result = await pool.query(sql);
-  return result.rowCount ?? 0;
+  logSql(namespace, sqlId, sql);
+  try {
+    const result = await pool.query(sql);
+    return result.rowCount ?? 0;
+  } catch (err) {
+    logSqlError(namespace, sqlId, err);
+    throw err;
+  }
 };
 
 export const withTransaction = async <T>(
@@ -118,8 +145,14 @@ export const clientQuery = async <T = Record<string, unknown>>(
     normalizeParams(params),
     format,
   );
-  const result = await client.query(sql);
-  return result.rows as T[];
+  logSql(namespace, sqlId, sql);
+  try {
+    const result = await client.query(sql);
+    return result.rows as T[];
+  } catch (err) {
+    logSqlError(namespace, sqlId, err);
+    throw err;
+  }
 };
 
 export const clientQueryOne = async <T = Record<string, unknown>>(
@@ -144,6 +177,12 @@ export const clientExecute = async (
     normalizeParams(params),
     format,
   );
-  const result = await client.query(sql);
-  return result.rowCount ?? 0;
+  logSql(namespace, sqlId, sql);
+  try {
+    const result = await client.query(sql);
+    return result.rowCount ?? 0;
+  } catch (err) {
+    logSqlError(namespace, sqlId, err);
+    throw err;
+  }
 };

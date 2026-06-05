@@ -1,18 +1,42 @@
 import { query, queryOne, execute } from "../db/pool";
 import { Product } from "../types/productTypes";
 
-export const findAllProducts = (params: {
+const toProduct = (row: any): Product => ({
+  id: row.id,
+  farmerId: row.farmer_id,
+  name: row.name,
+  description: row.description ?? null,
+  price: row.price,
+  stock: row.stock,
+  category: row.category,
+  fileGroupId: row.file_group_id ?? null,
+  status: row.status,
+  createdAt: row.created_at,
+  farmerName: row.farmer_name ?? undefined,
+  farmerUserId: row.farmer_user_id ?? undefined,
+});
+
+export const findAllProducts = async (params: {
   category?: string;
   farmerId?: string;
-}): Promise<Product[]> => query<Product>("product", "findAll", params);
+}): Promise<Product[]> => {
+  const rows = await query<any>("product", "findAll", params);
+  return rows.map(toProduct);
+};
 
-export const findProductById = (id: string): Promise<Product | null> =>
-  queryOne<Product>("product", "findById", { id });
+export const findProductById = async (id: string): Promise<Product | null> => {
+  const row = await queryOne<any>("product", "findById", { id });
+  return row ? toProduct(row) : null;
+};
 
-export const findProductsByFarmerId = (farmerId: string): Promise<Product[]> =>
-  query<Product>("product", "findByFarmerId", { farmerId });
+export const findProductsByFarmerId = async (
+  farmerId: string,
+): Promise<Product[]> => {
+  const rows = await query<any>("product", "findByFarmerId", { farmerId });
+  return rows.map(toProduct);
+};
 
-export const createProduct = (params: {
+export const createProduct = async (params: {
   farmerId: string;
   name: string;
   description?: string;
@@ -21,9 +45,12 @@ export const createProduct = (params: {
   category: string;
   fileGroupId?: string;
   status: string;
-}): Promise<Product | null> => queryOne<Product>("product", "create", params);
+}): Promise<Product | null> => {
+  const row = await queryOne<any>("product", "create", params);
+  return row ? toProduct(row) : null;
+};
 
-export const updateProduct = (params: {
+export const updateProduct = async (params: {
   id: string;
   farmerId: string;
   name?: string;
@@ -33,7 +60,10 @@ export const updateProduct = (params: {
   category?: string;
   fileGroupId?: string;
   status?: string;
-}): Promise<Product | null> => queryOne<Product>("product", "update", params);
+}): Promise<Product | null> => {
+  const row = await queryOne<any>("product", "update", params);
+  return row ? toProduct(row) : null;
+};
 
 export const deleteProduct = (id: string, farmerId: string): Promise<number> =>
   execute("product", "delete", { id, farmerId });

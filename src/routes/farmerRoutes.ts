@@ -36,7 +36,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "내 프로필",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     getMyProfileHandler,
   );
@@ -54,12 +54,12 @@ export default async function farmerRoutes(app: FastifyInstance) {
           properties: {
             name: { type: "string" },
             bio: { type: "string" },
-            photo_url: { type: "string" },
+            fileGroupId: { type: "string" },
             farm_description: { type: "string" },
           },
         },
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     upsertProfileHandler,
   );
@@ -71,8 +71,15 @@ export default async function farmerRoutes(app: FastifyInstance) {
         tags: ["Admin"],
         summary: "전체 농민 목록",
         security: [{ bearerAuth: [] }],
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+          },
+        },
       },
-      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS")],
     },
     getFarmersAdminHandler,
   );
@@ -85,7 +92,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "농민 승인",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER", "edit")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS", "edit")],
     },
     approveFarmerHandler,
   );
@@ -98,7 +105,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
         summary: "농민 거절",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMER", "edit")],
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS", "edit")],
     },
     rejectFarmerHandler,
   );

@@ -1,37 +1,76 @@
 import { query, queryOne, execute } from "../db/pool";
 import { FarmerProfile } from "../types/farmerTypes";
+import { PaginatedResult } from "../types/commonTypes";
 
-export const findAllFarmers = (): Promise<FarmerProfile[]> =>
-  query<FarmerProfile>("farmer", "findAll");
+const toFarmerProfile = (row: any): FarmerProfile => ({
+  id: row.id,
+  userId: row.user_id,
+  name: row.name,
+  bio: row.bio ?? null,
+  fileGroupId: row.file_group_id ?? null,
+  farmDescription: row.farm_description ?? null,
+  email: row.email ?? null,
+  status: row.status ?? undefined,
+  createdAt: row.created_at ?? undefined,
+});
 
-export const findFarmerById = (id: string): Promise<FarmerProfile | null> =>
-  queryOne<FarmerProfile>("farmer", "findById", { id });
+export const findAllFarmers = async (): Promise<FarmerProfile[]> => {
+  const rows = await query<any>("farmer", "findAll");
+  return rows.map(toFarmerProfile);
+};
 
-export const findFarmerByUserId = (
+export const findFarmerById = async (
+  id: string,
+): Promise<FarmerProfile | null> => {
+  const row = await queryOne<any>("farmer", "findById", { id });
+  return row ? toFarmerProfile(row) : null;
+};
+
+export const findFarmerByUserId = async (
   userId: string,
-): Promise<FarmerProfile | null> =>
-  queryOne<FarmerProfile>("farmer", "findByUserId", { userId });
+): Promise<FarmerProfile | null> => {
+  const row = await queryOne<any>("farmer", "findByUserId", { userId });
+  return row ? toFarmerProfile(row) : null;
+};
 
-export const createFarmerProfile = (params: {
+export const createFarmerProfile = async (params: {
   userId: string;
   name: string;
   bio?: string;
-  photoUrl?: string;
+  fileGroupId?: string;
   farmDescription?: string;
-}): Promise<FarmerProfile | null> =>
-  queryOne<FarmerProfile>("farmer", "create", params);
+}): Promise<FarmerProfile | null> => {
+  const row = await queryOne<any>("farmer", "create", params);
+  return row ? toFarmerProfile(row) : null;
+};
 
-export const updateFarmerProfile = (params: {
+export const updateFarmerProfile = async (params: {
   userId: string;
   name?: string;
   bio?: string;
-  photoUrl?: string;
+  fileGroupId?: string;
   farmDescription?: string;
-}): Promise<FarmerProfile | null> =>
-  queryOne<FarmerProfile>("farmer", "update", params);
+}): Promise<FarmerProfile | null> => {
+  const row = await queryOne<any>("farmer", "update", params);
+  return row ? toFarmerProfile(row) : null;
+};
 
-export const findAllFarmersForAdmin = (): Promise<FarmerProfile[]> =>
-  query<FarmerProfile>("farmer", "findAllForAdmin");
+export const findAllFarmersForAdmin = async (
+  page: number,
+  limit: number,
+): Promise<PaginatedResult<FarmerProfile>> => {
+  const offset = (page - 1) * limit;
+  const [rows, countRows] = await Promise.all([
+    query<any>("farmer", "findAllForAdmin", { limit, offset }),
+    query<any>("farmer", "countForAdmin"),
+  ]);
+  return {
+    items: rows.map(toFarmerProfile),
+    total: Number(countRows[0]?.total ?? 0),
+    page,
+    limit,
+  };
+};
 
 export const updateFarmerUserStatus = (
   userId: string,

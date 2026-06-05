@@ -121,11 +121,11 @@ export default async function orderRoutes(app: FastifyInstance) {
             status: {
               type: "string",
               enum: [
-                "pending",
-                "confirmed",
-                "shipped",
-                "delivered",
-                "cancelled",
+                "PENDING",
+                "CONFIRMED",
+                "SHIPPED",
+                "DELIVERED",
+                "CANCELLED",
               ],
             },
           },

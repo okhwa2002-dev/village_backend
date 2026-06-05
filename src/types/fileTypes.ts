@@ -4,25 +4,25 @@ export type FileRefType = "PRODUCT" | "FARMER" | "VILLAGE" | "BOARD";
 
 export interface FileGroup {
   id: string;
-  ref_type: FileRefType;
-  created_at: Date;
-  created_by: string | null;
+  refType: FileRefType;
+  createdAt: Date;
+  createdBy: string | null;
 }
 
 export interface FileRecord {
   id: string;
-  file_group_id: string;
-  original_name: string;
-  stored_name: string;
-  file_path: string;
-  file_url: string;
-  mime_type: string;
-  file_size: number;
-  storage_type: StorageType;
-  sort_order: number;
-  is_main_yn: "Y" | "N";
-  created_at: Date;
-  updated_at: Date | null;
+  fileGroupId: string;
+  originalName: string;
+  storedName: string;
+  filePath: string;
+  fileUrl: string;
+  mimeType: string;
+  fileSize: number;
+  storageType: StorageType;
+  sortOrder: number;
+  isMainYn: "Y" | "N";
+  createdAt: Date;
+  updatedAt: Date | null;
 }
 
 export interface CreateFileGroupDto {

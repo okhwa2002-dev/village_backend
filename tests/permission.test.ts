@@ -19,7 +19,17 @@ vi.mock("../src/db/pool", () => ({
   clientExecute: vi.fn(),
 }));
 
+vi.mock("jsonwebtoken", () => ({
+  default: {
+    sign: vi.fn(),
+    verify: vi.fn().mockImplementation(() => {
+      throw new Error("invalid token");
+    }),
+  },
+}));
+
 import * as pool from "../src/db/pool";
+import jwt from "jsonwebtoken";
 import { getUserMenuPermissions } from "../src/repositories/permissionRepository";
 
 describe("permissionRepository", () => {
@@ -27,7 +37,7 @@ describe("permissionRepository", () => {
 
   it("사용자의 메뉴 권한 목록을 반환한다", async () => {
     const mockPerms = [
-      { menu_code: "ADMIN_FARMER", can_edit: true, can_delete: false },
+      { menu_code: "ADMIN_FARMERS", can_edit: true, can_delete: false },
       { menu_code: "ADMIN_ORDER", can_edit: false, can_delete: false },
     ];
     vi.mocked(pool.query).mockResolvedValueOnce(mockPerms);
@@ -73,62 +83,59 @@ afterAll(async () => {
 describe("checkMenuPermission 미들웨어", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  const TEST_TOKEN = "test-session-uuid-1234";
-
-  const mockSession = {
-    id: "10",
-    user_id: "1",
-    token: TEST_TOKEN,
-    expires_at: new Date(Date.now() + 60_000),
+  const mockUser = {
+    id: "1",
     login_id: "admin01",
     name: "관리자",
-    role: "admin",
-    status: "active",
+    role: "ADMIN",
+    status: "ACTIVE",
+    created_at: new Date(),
   };
 
   it("메뉴 권한이 없으면 403을 반환한다", async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockSession); // findSessionByToken
-    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
-    vi.mocked(pool.query).mockResolvedValueOnce([]); // getUserMenuPermissions
+    vi.mocked(jwt.verify).mockReturnValueOnce({ userId: "1" } as never);
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockUser);
+    vi.mocked(pool.query).mockResolvedValueOnce([]);
 
     const res = await app.inject({
       method: "GET",
       url: "/api/admin/farmers",
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      headers: { authorization: "Bearer some-jwt-token" },
     });
 
     expect(res.statusCode).toBe(403);
   });
 
   it("읽기 권한이 있으면 admin/farmers GET에 200을 반환한다", async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockSession); // findSessionByToken
-    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
+    vi.mocked(jwt.verify).mockReturnValueOnce({ userId: "1" } as never);
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockUser);
     vi.mocked(pool.query)
       .mockResolvedValueOnce([
-        { menu_code: "ADMIN_FARMER", can_edit: false, can_delete: false },
-      ]) // getUserMenuPermissions
-      .mockResolvedValueOnce([]); // findAllFarmersForAdmin
+        { menu_code: "ADMIN_FARMERS", can_edit: false, can_delete: false },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ total: "0" }]);
 
     const res = await app.inject({
       method: "GET",
       url: "/api/admin/farmers",
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      headers: { authorization: "Bearer some-jwt-token" },
     });
 
     expect(res.statusCode).toBe(200);
   });
 
   it("edit 권한이 없으면 PATCH 라우트에 403을 반환한다", async () => {
-    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockSession); // findSessionByToken
-    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
+    vi.mocked(jwt.verify).mockReturnValueOnce({ userId: "1" } as never);
+    vi.mocked(pool.queryOne).mockResolvedValueOnce(mockUser);
     vi.mocked(pool.query).mockResolvedValueOnce([
-      { menu_code: "ADMIN_FARMER", can_edit: false, can_delete: false },
-    ]); // getUserMenuPermissions
+      { menu_code: "ADMIN_FARMERS", can_edit: false, can_delete: false },
+    ]);
 
     const res = await app.inject({
       method: "PATCH",
       url: "/api/admin/farmers/1/approve",
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      headers: { authorization: "Bearer some-jwt-token" },
     });
 
     expect(res.statusCode).toBe(403);

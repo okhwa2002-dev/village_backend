@@ -39,7 +39,7 @@ export const createProductByFarmer = async (
     stock: dto.stock,
     category: dto.category,
     fileGroupId: dto.fileGroupId,
-    status: "active",
+    status: "ACTIVE",
   });
 };
 

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="commonCode">
+
+  <select id="findAllGroups">
+    SELECT id, code, name, description, use_yn, created_at
+    FROM common_code_groups
+    WHERE deleted_at IS NULL
+    ORDER BY code
+  </select>
+
+  <insert id="createGroup">
+    INSERT INTO common_code_groups (code, name, description, use_yn)
+    VALUES (#{code}, #{name}, #{description}, #{useYn})
+    RETURNING id, code, name, description, use_yn, created_at
+  </insert>
+
+  <update id="updateGroup">
+    UPDATE common_code_groups
+    SET name        = #{name},
+        description = #{description},
+        use_yn      = #{useYn},
+        updated_at  = NOW()
+    WHERE id = #{id} AND deleted_at IS NULL
+    RETURNING id, code, name, description, use_yn, created_at
+  </update>
+
+  <update id="softDeleteGroup">
+    UPDATE common_code_groups
+    SET deleted_at = NOW()
+    WHERE id = #{id} AND deleted_at IS NULL
+  </update>
+
+  <select id="findCodesByGroupId">
+    SELECT id, group_id, code, name, extra_value, sort_order, use_yn, created_at
+    FROM common_codes
+    WHERE group_id = #{groupId} AND deleted_at IS NULL
+    ORDER BY sort_order, code
+  </select>
+
+  <insert id="createCode">
+    INSERT INTO common_codes (group_id, code, name, extra_value, sort_order, use_yn)
+    VALUES (#{groupId}, #{code}, #{name}, #{extraValue}, #{sortOrder}, #{useYn})
+    RETURNING id, group_id, code, name, extra_value, sort_order, use_yn, created_at
+  </insert>
+
+  <update id="updateCode">
+    UPDATE common_codes
+    SET name        = #{name},
+        extra_value = #{extraValue},
+        sort_order  = #{sortOrder},
+        use_yn      = #{useYn},
+        updated_at  = NOW()
+    WHERE id = #{id} AND deleted_at IS NULL
+    RETURNING id, group_id, code, name, extra_value, sort_order, use_yn, created_at
+  </update>
+
+  <update id="softDeleteCode">
+    UPDATE common_codes
+    SET deleted_at = NOW()
+    WHERE id = #{id} AND deleted_at IS NULL
+  </update>
+
+</mapper>

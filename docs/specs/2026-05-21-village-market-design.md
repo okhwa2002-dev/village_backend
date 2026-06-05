@@ -34,10 +34,16 @@
 ### Frontend (`village/frontend/`)
 | 항목 | 기술 |
 |---|---|
-| Framework | Nuxt 3 (Vue 3 SSR) |
-| Language | TypeScript |
+| Framework | Vue 3 (SPA) |
+| Build Tool | Vite |
+| Language | JavaScript (jsconfig.json) |
+| Router | Vue Router 5 |
 | 상태관리 | Pinia |
-| 스타일 | Tailwind CSS |
+| 스타일 | UnoCSS + Sass |
+| Template | Pug |
+| HTTP Client | Axios |
+| 테이블/그리드 | Tabulator Tables |
+| 아이콘 | Iconify / Lucide |
 
 ---
 

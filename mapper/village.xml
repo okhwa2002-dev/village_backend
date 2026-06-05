@@ -4,42 +4,59 @@
 <mapper namespace="village">
 
   <select id="findAll">
-    SELECT id, section, title, body, image_url, sort_order, published, updated_at
-    FROM village_content
-    WHERE published = true
-    ORDER BY section, sort_order
+    SELECT vc.id, vc.section, vc.title, vc.body, vc.file_group_id,
+           f.file_url AS image_url, vc.sort_order, vc.published_yn, vc.updated_at
+    FROM village_content vc
+    LEFT JOIN files f ON f.file_group_id = vc.file_group_id
+                     AND f.is_main_yn = 'Y'
+                     AND f.deleted_at IS NULL
+    WHERE vc.published_yn = 'Y'
+      AND vc.deleted_at IS NULL
+    ORDER BY vc.sort_order, vc.section
   </select>
 
   <select id="findBySection">
-    SELECT id, section, title, body, image_url, sort_order, published, updated_at
-    FROM village_content
-    WHERE published = true AND section = #{section}
-    ORDER BY sort_order
+    SELECT vc.id, vc.section, vc.title, vc.body, vc.file_group_id,
+           f.file_url AS image_url, vc.sort_order, vc.published_yn, vc.updated_at
+    FROM village_content vc
+    LEFT JOIN files f ON f.file_group_id = vc.file_group_id
+                     AND f.is_main_yn = 'Y'
+                     AND f.deleted_at IS NULL
+    WHERE vc.published_yn = 'Y'
+      AND vc.section = #{section}
+      AND vc.deleted_at IS NULL
+    ORDER BY vc.sort_order
   </select>
 
   <select id="findAllForAdmin">
-    SELECT id, section, title, body, image_url, sort_order, published, updated_at
-    FROM village_content
-    ORDER BY section, sort_order
+    SELECT vc.id, vc.section, vc.title, vc.body, vc.file_group_id,
+           f.file_url AS image_url, vc.sort_order, vc.published_yn, vc.updated_at
+    FROM village_content vc
+    LEFT JOIN files f ON f.file_group_id = vc.file_group_id
+                     AND f.is_main_yn = 'Y'
+                     AND f.deleted_at IS NULL
+    WHERE vc.deleted_at IS NULL
+    ORDER BY vc.section, vc.sort_order
   </select>
 
   <insert id="create">
-    INSERT INTO village_content (section, title, body, image_url, sort_order, published)
-    VALUES (#{section}, #{title}, #{body}, #{imageUrl}, #{sortOrder}, #{published})
-    RETURNING id, section, title, body, image_url, sort_order, published, updated_at
+    INSERT INTO village_content (section, title, body, file_group_id, sort_order, published_yn)
+    VALUES (#{section}, #{title}, #{body}, #{fileGroupId}, #{sortOrder}, #{publishedYn})
+    RETURNING id, section, title, body, file_group_id, sort_order, published_yn, updated_at
   </insert>
 
   <update id="update">
     UPDATE village_content
-    SET section    = COALESCE(#{section}, section),
-        title      = COALESCE(#{title}, title),
-        body       = COALESCE(#{body}, body),
-        image_url  = COALESCE(#{imageUrl}, image_url),
-        sort_order = COALESCE(#{sortOrder}, sort_order),
-        published  = COALESCE(#{published}, published),
-        updated_at = NOW()
+    SET section       = COALESCE(#{section}, section),
+        title         = COALESCE(#{title}, title),
+        body          = COALESCE(#{body}, body),
+        file_group_id = COALESCE(#{fileGroupId}, file_group_id),
+        sort_order    = COALESCE(#{sortOrder}, sort_order),
+        published_yn  = COALESCE(#{publishedYn}, published_yn),
+        updated_at    = NOW()
     WHERE id = #{id}
-    RETURNING id, section, title, body, image_url, sort_order, published, updated_at
+      AND deleted_at IS NULL
+    RETURNING id, section, title, body, file_group_id, sort_order, published_yn, updated_at
   </update>
 
   <delete id="delete">

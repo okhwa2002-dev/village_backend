@@ -1,20 +1,20 @@
 export interface Cart {
   id: string;
-  user_id: string;
-  created_at: Date;
+  userId: string;
+  createdAt: Date;
 }
 
 export interface CartItem {
   id: string;
-  cart_id: string;
-  product_id: string;
+  cartId: string;
+  productId: string;
   quantity: number;
-  product_name: string;
+  productName: string;
   price: number;
   stock: number;
-  file_group_id: string | null;
-  product_status: string;
-  farmer_name: string;
+  fileGroupId: string | null;
+  productStatus: string;
+  farmerName: string;
 }
 
 export interface AddCartItemDto {

@@ -10,16 +10,45 @@ import {
 import { FileGroup, FileRecord } from "../types/fileTypes";
 import { PoolClient } from "pg";
 
-export const createFileGroup = (params: {
+const toFileGroup = (row: any): FileGroup => ({
+  id: row.id,
+  refType: row.ref_type,
+  createdAt: row.created_at,
+  createdBy: row.created_by ?? null,
+});
+
+const toFileRecord = (row: any): FileRecord => ({
+  id: row.id,
+  fileGroupId: row.file_group_id,
+  originalName: row.original_name,
+  storedName: row.stored_name,
+  filePath: row.file_path,
+  fileUrl: row.file_url,
+  mimeType: row.mime_type,
+  fileSize: row.file_size,
+  storageType: row.storage_type,
+  sortOrder: row.sort_order,
+  isMainYn: row.is_main_yn,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at ?? null,
+});
+
+export const createFileGroup = async (params: {
   refType: string;
   createdBy: string;
-}): Promise<FileGroup | null> =>
-  queryOne<FileGroup>("file", "createGroup", params);
+}): Promise<FileGroup | null> => {
+  const row = await queryOne<any>("file", "createGroup", params);
+  return row ? toFileGroup(row) : null;
+};
 
-export const findFileGroupById = (id: string): Promise<FileGroup | null> =>
-  queryOne<FileGroup>("file", "findGroupById", { id });
+export const findFileGroupById = async (
+  id: string,
+): Promise<FileGroup | null> => {
+  const row = await queryOne<any>("file", "findGroupById", { id });
+  return row ? toFileGroup(row) : null;
+};
 
-export const createFile = (params: {
+export const createFile = async (params: {
   fileGroupId: string;
   originalName: string;
   storedName: string;
@@ -31,16 +60,22 @@ export const createFile = (params: {
   sortOrder: number;
   isMainYn: string;
   createdBy: string;
-}): Promise<FileRecord | null> =>
-  queryOne<FileRecord>("file", "createFile", params);
+}): Promise<FileRecord | null> => {
+  const row = await queryOne<any>("file", "createFile", params);
+  return row ? toFileRecord(row) : null;
+};
 
-export const findFilesByGroupId = (
+export const findFilesByGroupId = async (
   fileGroupId: string,
-): Promise<FileRecord[]> =>
-  query<FileRecord>("file", "findFilesByGroupId", { fileGroupId });
+): Promise<FileRecord[]> => {
+  const rows = await query<any>("file", "findFilesByGroupId", { fileGroupId });
+  return rows.map(toFileRecord);
+};
 
-export const findFileById = (id: string): Promise<FileRecord | null> =>
-  queryOne<FileRecord>("file", "findFileById", { id });
+export const findFileById = async (id: string): Promise<FileRecord | null> => {
+  const row = await queryOne<any>("file", "findFileById", { id });
+  return row ? toFileRecord(row) : null;
+};
 
 export const clearMainYn = (fileGroupId: string): Promise<number> =>
   execute("file", "clearMainYn", { fileGroupId });
@@ -52,20 +87,23 @@ export const promoteMainFile = (
 ): Promise<FileRecord | null> =>
   withTransaction(async (client: PoolClient) => {
     await clientExecute(client, "file", "clearMainYn", { fileGroupId });
-    return clientQueryOne<FileRecord>(client, "file", "updateFile", {
+    const row = await clientQueryOne<any>(client, "file", "updateFile", {
       id: fileId,
       isMainYn: "Y",
       updatedBy,
     });
+    return row ? toFileRecord(row) : null;
   });
 
-export const updateFile = (params: {
+export const updateFile = async (params: {
   id: string;
   sortOrder?: number;
   isMainYn?: string;
   updatedBy: string;
-}): Promise<FileRecord | null> =>
-  queryOne<FileRecord>("file", "updateFile", params);
+}): Promise<FileRecord | null> => {
+  const row = await queryOne<any>("file", "updateFile", params);
+  return row ? toFileRecord(row) : null;
+};
 
 export const softDeleteFile = (
   id: string,

@@ -3,26 +3,27 @@ export interface VillageContent {
   section: string;
   title: string;
   body: string | null;
-  image_url: string | null;
-  sort_order: number;
-  published: boolean;
-  updated_at: Date;
+  fileGroupId: string | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  publishedYn: string;
+  updatedAt: Date;
 }
 
 export interface CreateVillageContentDto {
   section: string;
   title: string;
   body?: string;
-  image_url?: string;
-  sort_order?: number;
-  published?: boolean;
+  fileGroupId?: string;
+  sortOrder?: number;
+  publishedYn?: string;
 }
 
 export interface UpdateVillageContentDto {
   section?: string;
   title?: string;
   body?: string;
-  image_url?: string;
-  sort_order?: number;
-  published?: boolean;
+  fileGroupId?: string;
+  sortOrder?: number;
+  publishedYn?: string;
 }

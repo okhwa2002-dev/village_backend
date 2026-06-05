@@ -12,10 +12,25 @@ import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import villageRoutes from "./routes/villageRoutes";
 import fileRoutes from "./routes/fileRoutes";
+import commonCodeRoutes from "./routes/commonCodeRoutes";
+import menuRoutes from "./routes/menuRoutes";
 
 export default function buildApp(): FastifyInstance {
+  const isDev = process.env.NODE_ENV !== "test";
   const app = Fastify({
-    logger: process.env.NODE_ENV !== "test",
+    logger: isDev
+      ? {
+          level: process.env.LOG_LEVEL || "info",
+          transport: {
+            target: "pino-pretty",
+            options: {
+              colorize: true,
+              translateTime: "SYS:HH:MM:ss",
+              ignore: "pid,hostname",
+            },
+          },
+        }
+      : false,
   });
 
   app.register(cors, {
@@ -51,6 +66,19 @@ export default function buildApp(): FastifyInstance {
   app.register(orderRoutes, { prefix: "/api" });
   app.register(villageRoutes, { prefix: "/api" });
   app.register(fileRoutes, { prefix: "/api" });
+  app.register(commonCodeRoutes, { prefix: "/api" });
+  app.register(menuRoutes, { prefix: "/api" });
+
+  app.setErrorHandler((error, request, reply) => {
+    app.log.error(
+      { err: error, method: request.method, url: request.url },
+      "Unhandled error",
+    );
+    reply.code(error.statusCode ?? 500).send({
+      success: false,
+      message: error.message || "서버 오류가 발생했습니다",
+    });
+  });
 
   app.get("/health", async () => ({ status: "ok" }));
 

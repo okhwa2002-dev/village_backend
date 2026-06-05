@@ -32,22 +32,23 @@ export const upsertProfile = async (
     userId,
     name: dto.name,
     bio: dto.bio,
-    photoUrl: dto.photo_url,
-    farmDescription: dto.farm_description,
+    fileGroupId: dto.fileGroupId,
+    farmDescription: dto.farmDescription,
   };
   return existing ? updateFarmerProfile(params) : createFarmerProfile(params);
 };
 
-export const getFarmersForAdmin = () => findAllFarmersForAdmin();
+export const getFarmersForAdmin = (page: number, limit: number) =>
+  findAllFarmersForAdmin(page, limit);
 
 export const approveFarmer = async (farmerId: string) => {
   const farmer = await findFarmerById(farmerId);
   if (!farmer) throw new Error("FARMER_NOT_FOUND");
-  await updateFarmerUserStatus(farmer.user_id, "active");
+  await updateFarmerUserStatus(farmer.userId, "ACTIVE");
 };
 
 export const rejectFarmer = async (farmerId: string) => {
   const farmer = await findFarmerById(farmerId);
   if (!farmer) throw new Error("FARMER_NOT_FOUND");
-  await updateFarmerUserStatus(farmer.user_id, "inactive");
+  await updateFarmerUserStatus(farmer.userId, "INACTIVE");
 };

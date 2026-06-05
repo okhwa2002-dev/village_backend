@@ -2,28 +2,32 @@ import { UserRole, UserStatus } from "./commonTypes";
 
 export interface User {
   id: string;
-  login_id: string;
+  loginId: string;
   email: string | null;
   password: string;
   name: string | null;
   phone: string | null;
   role: UserRole;
   status: UserStatus;
-  last_login_at: Date | null;
-  password_changed_at: Date | null;
-  created_at: Date;
+  lastLoginAt: Date | null;
+  passwordChangedAt: Date | null;
+  createdAt: Date;
 }
 
 export interface RegisterDto {
-  login_id: string;
+  loginId: string;
   password: string;
-  role: "farmer" | "consumer";
+  role: "FARMER" | "CONSUMER";
   name?: string;
   phone?: string;
   email?: string;
 }
 
 export interface LoginDto {
-  login_id: string;
+  loginId: string;
   password: string;
+}
+
+export interface RefreshDto {
+  refreshToken: string;
 }

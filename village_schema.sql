@@ -2,10 +2,10 @@
 -- PostgreSQL
 
 -- ENUM 타입 정의
-CREATE TYPE user_role AS ENUM ('admin', 'farmer', 'consumer');
-CREATE TYPE user_status AS ENUM ('pending', 'active', 'inactive');
-CREATE TYPE product_status AS ENUM ('active', 'hidden', 'soldout');
-CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled');
+CREATE TYPE user_role AS ENUM ('ADMIN', 'FARMER', 'CONSUMER');
+CREATE TYPE user_status AS ENUM ('PENDING', 'ACTIVE', 'INACTIVE');
+CREATE TYPE product_status AS ENUM ('ACTIVE', 'HIDDEN', 'SOLDOUT');
+CREATE TYPE order_status AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED');
 
 -- 사용자
 CREATE TABLE users (
@@ -16,7 +16,7 @@ CREATE TABLE users (
     name                 VARCHAR(100),
     phone                VARCHAR(20),
     role                 user_role    NOT NULL,
-    status               user_status  NOT NULL DEFAULT 'pending',
+    status               user_status  NOT NULL DEFAULT 'PENDING',
     last_login_at        TIMESTAMP,
     password_changed_at  TIMESTAMP,
     created_at           TIMESTAMP    NOT NULL DEFAULT NOW(),
@@ -27,6 +27,7 @@ CREATE TABLE users (
     deleted_by           BIGINT       REFERENCES users(id)
 );
 COMMENT ON TABLE  users                        IS '서비스 사용자 (소비자/농민/관리자 통합)';
+COMMENT ON COLUMN users.id                     IS '사용자 고유 식별자 (자동 증가 정수)';
 COMMENT ON COLUMN users.login_id               IS '로그인용 아이디 (유일값)';
 COMMENT ON COLUMN users.email                  IS '이메일 (알림용, 선택값)';
 COMMENT ON COLUMN users.password               IS 'bcrypt 해시된 비밀번호';
@@ -37,23 +38,35 @@ COMMENT ON COLUMN users.status                 IS '계정 상태: pending=승인
 COMMENT ON COLUMN users.last_login_at          IS '최종 로그인 일시';
 COMMENT ON COLUMN users.password_changed_at    IS '비밀번호 변경 일시';
 COMMENT ON COLUMN users.created_at             IS '계정 생성 일시';
+COMMENT ON COLUMN users.created_by             IS '최초 생성자 ID (자가 가입이면 NULL)';
+COMMENT ON COLUMN users.updated_at             IS '마지막 수정 일시 (수정된 적 없으면 NULL)';
+COMMENT ON COLUMN users.updated_by             IS '마지막 수정자 ID';
 COMMENT ON COLUMN users.deleted_at             IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
+COMMENT ON COLUMN users.deleted_by             IS '삭제 처리한 관리자 ID';
 CREATE INDEX idx_users_deleted_at  ON users(deleted_at) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX idx_users_login_id ON users(login_id) WHERE deleted_at IS NULL;
 
--- 사용자 세션
-CREATE TABLE user_sessions (
-    id         BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id    BIGINT      NOT NULL REFERENCES users(id),
-    token      VARCHAR(36) NOT NULL UNIQUE,
-    expires_at TIMESTAMP   NOT NULL,
-    created_at TIMESTAMP   NOT NULL DEFAULT NOW()
+-- JWT Refresh Token
+CREATE TABLE user_refresh_tokens (
+    id         BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id    BIGINT       NOT NULL REFERENCES users(id),
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    family_id  UUID         NOT NULL,
+    expires_at TIMESTAMP    NOT NULL,
+    revoked_at TIMESTAMP,
+    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
 );
-COMMENT ON TABLE  user_sessions            IS '로그인 세션 (슬라이딩 만료)';
-COMMENT ON COLUMN user_sessions.token      IS 'UUID 세션 토큰';
-COMMENT ON COLUMN user_sessions.expires_at IS '만료 일시 — 로그아웃 시 NOW()로 갱신';
-CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at);
-CREATE INDEX idx_user_sessions_user_id   ON user_sessions(user_id);
+COMMENT ON TABLE  user_refresh_tokens             IS 'JWT Refresh Token (Token Rotation)';
+COMMENT ON COLUMN user_refresh_tokens.id          IS 'PK';
+COMMENT ON COLUMN user_refresh_tokens.user_id     IS '사용자 FK (users.id)';
+COMMENT ON COLUMN user_refresh_tokens.token_hash  IS 'Refresh Token 해시값 (SHA-256)';
+COMMENT ON COLUMN user_refresh_tokens.family_id   IS '토큰 패밀리 — 탈취 감지용 그룹 ID';
+COMMENT ON COLUMN user_refresh_tokens.expires_at  IS '만료 일시';
+COMMENT ON COLUMN user_refresh_tokens.revoked_at  IS '폐기 일시 (NULL = 유효)';
+COMMENT ON COLUMN user_refresh_tokens.created_at  IS '생성 일시';
+CREATE INDEX idx_refresh_tokens_user_id    ON user_refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_family_id  ON user_refresh_tokens(family_id);
+CREATE INDEX idx_refresh_tokens_expires_at ON user_refresh_tokens(expires_at);
 
 -- 농민 프로필
 CREATE TABLE farmer_profiles (
@@ -96,7 +109,7 @@ CREATE TABLE products (
     stock       INTEGER        NOT NULL DEFAULT 0,
     category    VARCHAR(50)    NOT NULL,
     file_group_id BIGINT,
-    status      product_status NOT NULL DEFAULT 'active',
+    status      product_status NOT NULL DEFAULT 'ACTIVE',
     created_at  TIMESTAMP      NOT NULL DEFAULT NOW(),
     created_by  BIGINT         REFERENCES users(id),
     updated_at  TIMESTAMP,
@@ -192,7 +205,7 @@ CREATE TABLE orders (
     consumer_email VARCHAR(255) NOT NULL,
     address        TEXT         NOT NULL,
     memo           TEXT,
-    status         order_status NOT NULL DEFAULT 'pending',
+    status         order_status NOT NULL DEFAULT 'PENDING',
     total_price    INTEGER      NOT NULL,
     created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
     created_by     BIGINT       REFERENCES users(id),
@@ -336,8 +349,11 @@ CREATE TABLE menus (
     code        VARCHAR(50)  NOT NULL UNIQUE,
     path        VARCHAR(200),
     icon        VARCHAR(100),
+    dept        SMALLINT     NOT NULL DEFAULT 1,
     sort_order  INTEGER      NOT NULL DEFAULT 0,
-    is_visible  BOOLEAN      NOT NULL DEFAULT TRUE,
+    visible_yn  CHAR(1)      NOT NULL DEFAULT 'Y' CHECK (visible_yn IN ('Y', 'N')),
+    use_yn      CHAR(1)      NOT NULL DEFAULT 'Y' CHECK (use_yn IN ('Y', 'N')),
+    description VARCHAR(500),
     created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
     created_by  BIGINT       REFERENCES users(id),
     updated_at  TIMESTAMP,
@@ -353,8 +369,11 @@ COMMENT ON COLUMN menus.name       IS '메뉴 표시 이름';
 COMMENT ON COLUMN menus.code       IS '메뉴 식별 코드 (예: SHOP, ADMIN_ORDER)';
 COMMENT ON COLUMN menus.path       IS '프론트엔드 라우트 경로 (예: /admin/orders)';
 COMMENT ON COLUMN menus.icon       IS '아이콘 식별자 (예: i-lucide-home)';
+COMMENT ON COLUMN menus.dept       IS '메뉴 깊이 (1=최상위, 2=2단계, 3=3단계)';
 COMMENT ON COLUMN menus.sort_order IS '같은 레벨 내 표시 순서 (오름차순)';
-COMMENT ON COLUMN menus.is_visible IS '네비게이션 노출 여부 (false=숨김 메뉴)';
+COMMENT ON COLUMN menus.visible_yn    IS '네비게이션 노출 여부 (Y=노출, N=숨김)';
+COMMENT ON COLUMN menus.use_yn        IS '사용 여부 (Y=사용, N=미사용)';
+COMMENT ON COLUMN menus.description   IS '메뉴 설명 (선택 입력)';
 COMMENT ON COLUMN menus.created_at IS '메뉴 생성 일시';
 COMMENT ON COLUMN menus.created_by IS '생성자 ID';
 COMMENT ON COLUMN menus.updated_at IS '마지막 수정 일시 (수정된 적 없으면 NULL)';
@@ -362,6 +381,7 @@ COMMENT ON COLUMN menus.updated_by IS '마지막 수정자 ID';
 COMMENT ON COLUMN menus.deleted_at IS 'NULL이면 유효, 값이 있으면 소프트 삭제';
 COMMENT ON COLUMN menus.deleted_by IS '삭제 처리자 ID';
 CREATE INDEX idx_menus_parent_id  ON menus(parent_id);
+CREATE INDEX idx_menus_dept       ON menus(dept);
 CREATE INDEX idx_menus_group_id   ON menus(group_id);
 CREATE INDEX idx_menus_deleted_at ON menus(deleted_at) WHERE deleted_at IS NULL;
 
@@ -443,7 +463,7 @@ CREATE TABLE village_content (
     body       TEXT,
     file_group_id BIGINT,
     sort_order INTEGER      NOT NULL DEFAULT 0,
-    published  BOOLEAN      NOT NULL DEFAULT FALSE,
+    published_yn CHAR(1)    NOT NULL DEFAULT 'N' CHECK (published_yn IN ('Y', 'N')),
     created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
     created_by BIGINT       REFERENCES users(id),
     updated_at TIMESTAMP,
@@ -458,7 +478,7 @@ COMMENT ON COLUMN village_content.title      IS '콘텐츠 제목';
 COMMENT ON COLUMN village_content.body       IS '콘텐츠 본문 (마크다운 또는 HTML)';
 COMMENT ON COLUMN village_content.file_group_id IS 'file_groups.id 참조 (NULL이면 이미지 없음)';
 COMMENT ON COLUMN village_content.sort_order IS '같은 section 내 표시 순서 (오름차순)';
-COMMENT ON COLUMN village_content.published  IS '공개 여부 (false=임시저장, true=공개)';
+COMMENT ON COLUMN village_content.published_yn IS '공개 여부 (Y=공개, N=비공개)';
 COMMENT ON COLUMN village_content.created_at IS '콘텐츠 생성 일시';
 COMMENT ON COLUMN village_content.created_by IS '생성자 ID';
 COMMENT ON COLUMN village_content.updated_at IS '마지막 수정 일시 (수정된 적 없으면 NULL)';

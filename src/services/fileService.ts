@@ -33,7 +33,7 @@ export const uploadFile = async (params: {
   const saved = await saveFile(
     params.buffer,
     params.originalName,
-    group.ref_type,
+    group.refType,
   );
 
   if (params.isMainYn === "Y") {
@@ -70,7 +70,7 @@ export const patchFile = async (params: {
   if (!file) throw new Error("FILE_NOT_FOUND");
 
   if (params.isMainYn === "Y") {
-    await clearMainYn(file.file_group_id);
+    await clearMainYn(file.fileGroupId);
   }
 
   const updated = await updateFile({
@@ -91,7 +91,7 @@ export const removeFileById = async (id: string, userId: string) => {
   if (count === 0) throw new Error("FILE_NOT_FOUND");
 
   try {
-    await removeFile(file.file_path);
+    await removeFile(file.filePath);
   } catch {
     // 물리 파일 삭제 실패는 무시 (별도 배치로 정리)
   }

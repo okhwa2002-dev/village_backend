@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { RegisterDto, LoginDto } from "../types/userTypes";
-import { register, login, logout } from "../services/authService";
+import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
+import { register, login, refresh, logout } from "../services/authService";
 import { successResponse, errorResponse } from "../utils/response";
 
 export const registerHandler = async (
@@ -45,14 +45,44 @@ export const loginHandler = async (
   }
 };
 
-export const logoutHandler = async (
+export const refreshHandler = async (
+  req: FastifyRequest<{ Body: RefreshDto }>,
+  reply: FastifyReply,
+) => {
+  try {
+    const result = await refresh(req.body.refreshToken);
+    return reply.send(successResponse(result, "토큰이 갱신되었습니다"));
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      if (
+        err.message === "INVALID_REFRESH_TOKEN" ||
+        err.message === "REFRESH_TOKEN_EXPIRED"
+      )
+        return reply.code(401).send(errorResponse("유효하지 않은 토큰입니다"));
+      if (err.message === "REFRESH_TOKEN_REUSE")
+        return reply
+          .code(401)
+          .send(
+            errorResponse("토큰이 탈취되었을 수 있습니다. 다시 로그인하세요"),
+          );
+      if (err.message === "ACCOUNT_NOT_ACTIVE")
+        return reply.code(403).send(errorResponse("비활성 계정입니다"));
+    }
+    throw err;
+  }
+};
+
+export const meHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const auth = req.headers.authorization;
-  if (auth && auth.startsWith("Bearer ")) {
-    const token = auth.slice(7);
-    await logout(token);
-  }
+  return reply.send(successResponse(req.user, "사용자 정보 조회"));
+};
+
+export const logoutHandler = async (
+  req: FastifyRequest<{ Body: RefreshDto }>,
+  reply: FastifyReply,
+) => {
+  await logout(req.body.refreshToken);
   return reply.send(successResponse(null, "로그아웃되었습니다"));
 };

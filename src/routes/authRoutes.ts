@@ -2,10 +2,12 @@ import { FastifyInstance } from "fastify";
 import {
   registerHandler,
   loginHandler,
+  refreshHandler,
+  meHandler,
   logoutHandler,
 } from "../controllers/authController";
 import { authenticate } from "../plugins/authenticate";
-import { RegisterDto, LoginDto } from "../types/userTypes";
+import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
 
 export default async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: RegisterDto }>(
@@ -16,11 +18,11 @@ export default async function authRoutes(app: FastifyInstance) {
         summary: "회원가입",
         body: {
           type: "object",
-          required: ["login_id", "password", "role"],
+          required: ["loginId", "password", "role"],
           properties: {
-            login_id: { type: "string" },
+            loginId: { type: "string" },
             password: { type: "string", minLength: 6 },
-            role: { type: "string", enum: ["farmer", "consumer"] },
+            role: { type: "string", enum: ["FARMER", "CONSUMER"] },
             name: { type: "string" },
             phone: { type: "string" },
             email: { type: "string", format: "email" },
@@ -31,17 +33,19 @@ export default async function authRoutes(app: FastifyInstance) {
     registerHandler,
   );
 
+  app.get("/auth/me", { preHandler: authenticate }, meHandler);
+
   app.post<{ Body: LoginDto }>(
     "/auth/login",
     {
       schema: {
         tags: ["Auth"],
-        summary: "로그인",
+        summary: "로그인 — Access Token + Refresh Token 발급",
         body: {
           type: "object",
-          required: ["login_id", "password"],
+          required: ["loginId", "password"],
           properties: {
-            login_id: { type: "string" },
+            loginId: { type: "string" },
             password: { type: "string" },
           },
         },
@@ -50,15 +54,38 @@ export default async function authRoutes(app: FastifyInstance) {
     loginHandler,
   );
 
-  app.post(
+  app.post<{ Body: RefreshDto }>(
+    "/auth/refresh",
+    {
+      schema: {
+        tags: ["Auth"],
+        summary: "Access Token 갱신 (Token Rotation)",
+        body: {
+          type: "object",
+          required: ["refreshToken"],
+          properties: {
+            refreshToken: { type: "string" },
+          },
+        },
+      },
+    },
+    refreshHandler,
+  );
+
+  app.post<{ Body: RefreshDto }>(
     "/auth/logout",
     {
       schema: {
         tags: ["Auth"],
-        summary: "로그아웃",
-        security: [{ bearerAuth: [] }],
+        summary: "로그아웃 — Refresh Token 패밀리 전체 폐기",
+        body: {
+          type: "object",
+          required: ["refreshToken"],
+          properties: {
+            refreshToken: { type: "string" },
+          },
+        },
       },
-      preHandler: [authenticate],
     },
     logoutHandler,
   );

@@ -28,7 +28,17 @@ vi.mock("../src/services/storage/localStorageAdapter", () => ({
   removeFile: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("jsonwebtoken", () => ({
+  default: {
+    sign: vi.fn(),
+    verify: vi.fn().mockImplementation(() => {
+      throw new Error("invalid token");
+    }),
+  },
+}));
+
 import * as pool from "../src/db/pool";
+import jwt from "jsonwebtoken";
 import {
   createGroup,
   uploadFile,
@@ -42,12 +52,14 @@ describe("fileService", () => {
 
   describe("createGroup", () => {
     it("파일 그룹을 생성하고 반환한다", async () => {
-      const mockGroup = {
+      const now = new Date();
+      // mock returns raw DB row (snake_case)
+      vi.mocked(pool.queryOne).mockResolvedValueOnce({
         id: "1",
         ref_type: "PRODUCT",
-        created_at: new Date(),
-      };
-      vi.mocked(pool.queryOne).mockResolvedValueOnce(mockGroup);
+        created_at: now,
+        created_by: null,
+      });
 
       const result = await createGroup("PRODUCT", "10");
 
@@ -55,7 +67,13 @@ describe("fileService", () => {
         refType: "PRODUCT",
         createdBy: "10",
       });
-      expect(result).toEqual(mockGroup);
+      // result is the camelCase-transformed output
+      expect(result).toEqual({
+        id: "1",
+        refType: "PRODUCT",
+        createdAt: now,
+        createdBy: null,
+      });
     });
 
     it("생성 실패 시 FILE_GROUP_CREATE_FAILED 에러를 던진다", async () => {
@@ -154,34 +172,31 @@ describe("POST /api/file-groups", () => {
   });
 
   it("유효한 토큰으로 파일 그룹을 생성한다", async () => {
-    const TEST_TOKEN = "test-session-file-1234";
-    const mockSession = {
-      id: "10",
-      user_id: "1",
-      token: TEST_TOKEN,
-      expires_at: new Date(Date.now() + 60_000),
+    vi.mocked(jwt.verify).mockReturnValueOnce({ userId: "1" } as never);
+    const mockUser = {
+      id: "1",
       login_id: "farmer01",
       name: "농민",
-      role: "farmer",
-      status: "active",
+      role: "FARMER",
+      status: "ACTIVE",
+      created_at: new Date(),
     };
     const mockGroup = { id: "1", ref_type: "PRODUCT", created_at: new Date() };
     vi.mocked(pool.queryOne)
-      .mockResolvedValueOnce(mockSession) // findSessionByToken
+      .mockResolvedValueOnce(mockUser) // findUserById (authenticate)
       .mockResolvedValueOnce(mockGroup); // createGroup
-    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
 
     const res = await app.inject({
       method: "POST",
       url: "/api/file-groups",
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      headers: { authorization: "Bearer some-jwt-token" },
       payload: { refType: "PRODUCT" },
     });
 
     expect(res.statusCode).toBe(201);
     const body = JSON.parse(res.body);
     expect(body.success).toBe(true);
-    expect(body.data.ref_type).toBe("PRODUCT");
+    expect(body.data.refType).toBe("PRODUCT");
   });
 });
 
@@ -212,26 +227,23 @@ describe("GET /api/file-groups/:id/files", () => {
 
 describe("DELETE /api/files/:id", () => {
   it("파일이 없으면 404를 반환한다", async () => {
-    const TEST_TOKEN = "test-session-file-delete-1234";
-    const mockSession = {
-      id: "10",
-      user_id: "1",
-      token: TEST_TOKEN,
-      expires_at: new Date(Date.now() + 60_000),
+    vi.mocked(jwt.verify).mockReturnValueOnce({ userId: "1" } as never);
+    const mockUser = {
+      id: "1",
       login_id: "farmer01",
       name: "농민",
-      role: "farmer",
-      status: "active",
+      role: "FARMER",
+      status: "ACTIVE",
+      created_at: new Date(),
     };
     vi.mocked(pool.queryOne)
-      .mockResolvedValueOnce(mockSession) // findSessionByToken
+      .mockResolvedValueOnce(mockUser) // findUserById (authenticate)
       .mockResolvedValueOnce(null); // findFileById → FILE_NOT_FOUND
-    vi.mocked(pool.execute).mockResolvedValueOnce(1); // refreshSession
 
     const res = await app.inject({
       method: "DELETE",
       url: "/api/files/999",
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      headers: { authorization: "Bearer some-jwt-token" },
     });
 
     expect(res.statusCode).toBe(404);

@@ -9,7 +9,11 @@ import {
   approveFarmer,
   rejectFarmer,
 } from "../services/farmerService";
-import { successResponse, errorResponse } from "../utils/response";
+import {
+  successResponse,
+  errorResponse,
+  paginatedResponse,
+} from "../utils/response";
 
 export const getFarmersHandler = async (
   _req: FastifyRequest,
@@ -58,11 +62,14 @@ export const upsertProfileHandler = async (
 };
 
 export const getFarmersAdminHandler = async (
-  _req: FastifyRequest,
+  req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const farmers = await getFarmersForAdmin();
-  return reply.send(successResponse(farmers));
+  const qs = req.query as { page?: string; limit?: string };
+  const page = Math.max(1, Number(qs.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(qs.limit) || 20));
+  const result = await getFarmersForAdmin(page, limit);
+  return reply.send(paginatedResponse(result));
 };
 
 export const approveFarmerHandler = async (

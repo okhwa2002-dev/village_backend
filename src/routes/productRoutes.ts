@@ -43,7 +43,7 @@ export default async function productRoutes(app: FastifyInstance) {
         summary: "내 상품 목록",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     getMyProductsHandler,
   );
@@ -68,7 +68,7 @@ export default async function productRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     createProductHandler,
   );
@@ -89,11 +89,11 @@ export default async function productRoutes(app: FastifyInstance) {
             stock: { type: "integer", minimum: 0 },
             category: { type: "string" },
             fileGroupId: { type: "string" },
-            status: { type: "string", enum: ["active", "hidden", "soldout"] },
+            status: { type: "string", enum: ["ACTIVE", "HIDDEN", "SOLDOUT"] },
           },
         },
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     updateProductHandler,
   );
@@ -106,7 +106,7 @@ export default async function productRoutes(app: FastifyInstance) {
         summary: "상품 삭제",
         security: [{ bearerAuth: [] }],
       },
-      preHandler: [authenticate, requireRole("farmer")],
+      preHandler: [authenticate, requireRole("FARMER")],
     },
     deleteProductHandler,
   );

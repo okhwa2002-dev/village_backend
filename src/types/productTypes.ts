@@ -2,17 +2,17 @@ import { ProductStatus } from "./commonTypes";
 
 export interface Product {
   id: string;
-  farmer_id: string;
+  farmerId: string;
   name: string;
   description: string | null;
   price: number;
   stock: number;
   category: string;
-  file_group_id: string | null;
+  fileGroupId: string | null;
   status: ProductStatus;
-  created_at: Date;
-  farmer_name?: string;
-  farmer_user_id?: string;
+  createdAt: Date;
+  farmerName?: string;
+  farmerUserId?: string;
 }
 
 export interface CreateProductDto {

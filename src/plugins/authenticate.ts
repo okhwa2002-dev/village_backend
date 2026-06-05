@@ -1,10 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
+import jwt from "jsonwebtoken";
 import { SessionUser, UserRole } from "../types/commonTypes";
 import { getUserMenuPermissions } from "../repositories/permissionRepository";
-import {
-  findSessionByToken,
-  refreshSession,
-} from "../repositories/authRepository";
+import { findUserById } from "../repositories/authRepository";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -12,13 +10,7 @@ declare module "fastify" {
   }
 }
 
-const getExpiresAt = (): Date => {
-  const d = new Date();
-  d.setMinutes(
-    d.getMinutes() + parseInt(process.env.SESSION_DURATION_MINUTES || "30", 10),
-  );
-  return d;
-};
+const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
 const extractToken = (req: FastifyRequest): string | null => {
   const auth = req.headers.authorization;
@@ -37,24 +29,28 @@ export const authenticate = async (
       .send({ success: false, message: "인증이 필요합니다" });
   }
 
-  const session = await findSessionByToken(token);
-  if (!session) {
+  let payload: { userId: string };
+  try {
+    payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+  } catch {
+    return reply
+      .code(401)
+      .send({ success: false, message: "유효하지 않은 토큰입니다" });
+  }
+
+  const user = await findUserById(payload.userId);
+  if (!user || user.status !== "ACTIVE") {
     return reply
       .code(401)
       .send({ success: false, message: "인증이 필요합니다" });
   }
 
-  try {
-    await refreshSession(token, getExpiresAt());
-  } catch {
-    // best-effort: session valid, don't fail the request
-  }
   req.user = {
-    id: session.user_id,
-    login_id: session.login_id,
-    name: session.name,
-    role: session.role,
-    status: session.status,
+    id: user.id,
+    loginId: user.loginId,
+    name: user.name,
+    role: user.role,
+    status: user.status,
   };
 };
 

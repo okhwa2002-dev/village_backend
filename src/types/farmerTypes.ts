@@ -1,18 +1,18 @@
 export interface FarmerProfile {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
   bio: string | null;
-  photo_url: string | null;
-  farm_description: string | null;
+  fileGroupId: string | null;
+  farmDescription: string | null;
   email: string;
   status?: string;
-  created_at?: Date;
+  createdAt?: Date;
 }
 
 export interface UpsertFarmerProfileDto {
   name: string;
   bio?: string;
-  photo_url?: string;
-  farm_description?: string;
+  fileGroupId?: string;
+  farmDescription?: string;
 }
