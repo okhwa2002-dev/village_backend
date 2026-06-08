@@ -1,12 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  getProductsHandler,
-  getProductHandler,
-  getMyProductsHandler,
-  createProductHandler,
-  updateProductHandler,
-  deleteProductHandler,
-} from "../controllers/productController";
+import productController from "../controllers/productController";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
 import { authenticate, requireRole } from "../plugins/authenticate";
 
@@ -26,13 +19,13 @@ export default async function productRoutes(app: FastifyInstance) {
         },
       },
     },
-    getProductsHandler,
+    productController.getProductsHandler,
   );
 
   app.get<{ Params: { id: string } }>(
     "/products/:id",
     { schema: { tags: ["Product"], summary: "상품 상세" } },
-    getProductHandler,
+    productController.getProductHandler,
   );
 
   app.get(
@@ -45,7 +38,7 @@ export default async function productRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    getMyProductsHandler,
+    productController.getMyProductsHandler,
   );
 
   app.post<{ Body: CreateProductDto }>(
@@ -70,7 +63,7 @@ export default async function productRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    createProductHandler,
+    productController.createProductHandler,
   );
 
   app.put<{ Params: { id: string }; Body: UpdateProductDto }>(
@@ -95,7 +88,7 @@ export default async function productRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    updateProductHandler,
+    productController.updateProductHandler,
   );
 
   app.delete<{ Params: { id: string } }>(
@@ -108,6 +101,6 @@ export default async function productRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    deleteProductHandler,
+    productController.deleteProductHandler,
   );
 }

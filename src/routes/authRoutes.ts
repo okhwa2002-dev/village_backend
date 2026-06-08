@@ -1,11 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  registerHandler,
-  loginHandler,
-  refreshHandler,
-  meHandler,
-  logoutHandler,
-} from "../controllers/authController";
+import authController from "../controllers/authController";
 import { authenticate } from "../plugins/authenticate";
 import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
 
@@ -30,10 +24,10 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    registerHandler,
+    authController.registerHandler,
   );
 
-  app.get("/auth/me", { preHandler: authenticate }, meHandler);
+  app.get("/auth/me", { preHandler: authenticate }, authController.meHandler);
 
   app.post<{ Body: LoginDto }>(
     "/auth/login",
@@ -51,7 +45,7 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    loginHandler,
+    authController.loginHandler,
   );
 
   app.post<{ Body: RefreshDto }>(
@@ -69,7 +63,7 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    refreshHandler,
+    authController.refreshHandler,
   );
 
   app.post<{ Body: RefreshDto }>(
@@ -87,6 +81,6 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    logoutHandler,
+    authController.logoutHandler,
   );
 }

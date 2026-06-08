@@ -17,15 +17,12 @@ import {
 } from "../utils/response";
 import { generateExcel } from "../utils/excel";
 
-export const getFarmersHandler = async (
-  _req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const getFarmersHandler = async (_req: FastifyRequest, reply: FastifyReply) => {
   const farmers = await getFarmers();
   return reply.send(successResponse(farmers));
 };
 
-export const getFarmerHandler = async (
+const getFarmerHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -39,7 +36,7 @@ export const getFarmerHandler = async (
   }
 };
 
-export const getMyProfileHandler = async (
+const getMyProfileHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -54,7 +51,7 @@ export const getMyProfileHandler = async (
   }
 };
 
-export const upsertProfileHandler = async (
+const upsertProfileHandler = async (
   req: FastifyRequest<{ Body: UpsertFarmerProfileDto }>,
   reply: FastifyReply,
 ) => {
@@ -63,7 +60,7 @@ export const upsertProfileHandler = async (
   return reply.send(successResponse(profile, "프로필이 저장되었습니다"));
 };
 
-export const getFarmersAdminHandler = async (
+const getFarmersAdminHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -74,7 +71,7 @@ export const getFarmersAdminHandler = async (
   return reply.send(paginatedResponse(result));
 };
 
-export const exportFarmersHandler = async (
+const exportFarmersHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -115,7 +112,7 @@ export const exportFarmersHandler = async (
     .send(buffer);
 };
 
-export const approveFarmerHandler = async (
+const approveFarmerHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -129,7 +126,7 @@ export const approveFarmerHandler = async (
   }
 };
 
-export const rejectFarmerHandler = async (
+const rejectFarmerHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -141,4 +138,15 @@ export const rejectFarmerHandler = async (
       return reply.code(404).send(errorResponse("농민을 찾을 수 없습니다"));
     throw err;
   }
+};
+
+export default {
+  getFarmersHandler,
+  getFarmerHandler,
+  getMyProfileHandler,
+  upsertProfileHandler,
+  getFarmersAdminHandler,
+  exportFarmersHandler,
+  approveFarmerHandler,
+  rejectFarmerHandler,
 };

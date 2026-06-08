@@ -1,12 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  getContentsHandler,
-  getContentsBySectionHandler,
-  getContentsAdminHandler,
-  createContentHandler,
-  updateContentHandler,
-  deleteContentHandler,
-} from "../controllers/villageController";
+import villageController from "../controllers/villageController";
 import {
   CreateVillageContentDto,
   UpdateVillageContentDto,
@@ -17,13 +10,13 @@ export default async function villageRoutes(app: FastifyInstance) {
   app.get(
     "/village",
     { schema: { tags: ["Village"], summary: "마을 콘텐츠 목록" } },
-    getContentsHandler,
+    villageController.getContentsHandler,
   );
 
   app.get<{ Params: { section: string } }>(
     "/village/:section",
     { schema: { tags: ["Village"], summary: "섹션별 콘텐츠 목록" } },
-    getContentsBySectionHandler,
+    villageController.getContentsBySectionHandler,
   );
 
   app.get(
@@ -36,7 +29,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE")],
     },
-    getContentsAdminHandler,
+    villageController.getContentsAdminHandler,
   );
 
   app.post<{ Body: CreateVillageContentDto }>(
@@ -50,7 +43,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
-    createContentHandler,
+    villageController.createContentHandler,
   );
 
   app.put<{ Params: { id: string }; Body: UpdateVillageContentDto }>(
@@ -64,7 +57,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
-    updateContentHandler,
+    villageController.updateContentHandler,
   );
 
   app.delete<{ Params: { id: string } }>(
@@ -80,6 +73,6 @@ export default async function villageRoutes(app: FastifyInstance) {
         checkMenuPermission("ADMIN_VILLAGE", "delete"),
       ],
     },
-    deleteContentHandler,
+    villageController.deleteContentHandler,
   );
 }

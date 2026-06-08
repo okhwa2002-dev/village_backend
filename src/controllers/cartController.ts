@@ -9,16 +9,13 @@ import {
 } from "../services/cartService";
 import { successResponse, errorResponse } from "../utils/response";
 
-export const getCartHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const getCartHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
   const cart = await getCart(user.id);
   return reply.send(successResponse(cart));
 };
 
-export const addCartItemHandler = async (
+const addCartItemHandler = async (
   req: FastifyRequest<{ Body: AddCartItemDto }>,
   reply: FastifyReply,
 ) => {
@@ -35,7 +32,7 @@ export const addCartItemHandler = async (
   }
 };
 
-export const updateCartItemHandler = async (
+const updateCartItemHandler = async (
   req: FastifyRequest<{ Params: { itemId: string }; Body: UpdateCartItemDto }>,
   reply: FastifyReply,
 ) => {
@@ -58,7 +55,7 @@ export const updateCartItemHandler = async (
   }
 };
 
-export const removeCartItemHandler = async (
+const removeCartItemHandler = async (
   req: FastifyRequest<{ Params: { itemId: string } }>,
   reply: FastifyReply,
 ) => {
@@ -75,11 +72,16 @@ export const removeCartItemHandler = async (
   }
 };
 
-export const clearCartHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const clearCartHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
   await clearCart(user.id);
   return reply.send(successResponse(null, "장바구니가 비워졌습니다"));
+};
+
+export default {
+  getCartHandler,
+  addCartItemHandler,
+  updateCartItemHandler,
+  removeCartItemHandler,
+  clearCartHandler,
 };

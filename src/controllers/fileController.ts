@@ -13,7 +13,7 @@ import {
 } from "../utils/multipartParser";
 import { successResponse, errorResponse } from "../utils/response";
 
-export const createFileGroupHandler = async (
+const createFileGroupHandler = async (
   req: FastifyRequest<{ Body: { refType: FileRefType } }>,
   reply: FastifyReply,
 ) => {
@@ -24,10 +24,7 @@ export const createFileGroupHandler = async (
     .send(successResponse(group, "파일 그룹이 생성되었습니다"));
 };
 
-export const uploadFileHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const uploadFileHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const user = req.user;
     const { fields, files } = await parseMultipartWithFiles(req);
@@ -77,7 +74,7 @@ export const uploadFileHandler = async (
   }
 };
 
-export const getFilesHandler = async (
+const getFilesHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -85,7 +82,7 @@ export const getFilesHandler = async (
   return reply.send(successResponse(files));
 };
 
-export const patchFileHandler = async (
+const patchFileHandler = async (
   req: FastifyRequest<{ Params: { id: string }; Body: PatchFileDto }>,
   reply: FastifyReply,
 ) => {
@@ -106,7 +103,7 @@ export const patchFileHandler = async (
   }
 };
 
-export const deleteFileHandler = async (
+const deleteFileHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -120,4 +117,12 @@ export const deleteFileHandler = async (
     }
     throw err;
   }
+};
+
+export default {
+  createFileGroupHandler,
+  uploadFileHandler,
+  getFilesHandler,
+  patchFileHandler,
+  deleteFileHandler,
 };

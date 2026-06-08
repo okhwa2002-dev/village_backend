@@ -10,7 +10,7 @@ import {
 } from "../services/productService";
 import { successResponse, errorResponse } from "../utils/response";
 
-export const getProductsHandler = async (
+const getProductsHandler = async (
   req: FastifyRequest<{
     Querystring: { category?: string; farmerId?: string };
   }>,
@@ -20,7 +20,7 @@ export const getProductsHandler = async (
   return reply.send(successResponse(products));
 };
 
-export const getProductHandler = async (
+const getProductHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -34,7 +34,7 @@ export const getProductHandler = async (
   }
 };
 
-export const getMyProductsHandler = async (
+const getMyProductsHandler = async (
   req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -49,7 +49,7 @@ export const getMyProductsHandler = async (
   }
 };
 
-export const createProductHandler = async (
+const createProductHandler = async (
   req: FastifyRequest<{ Body: CreateProductDto }>,
   reply: FastifyReply,
 ) => {
@@ -66,7 +66,7 @@ export const createProductHandler = async (
   }
 };
 
-export const updateProductHandler = async (
+const updateProductHandler = async (
   req: FastifyRequest<{ Params: { id: string }; Body: UpdateProductDto }>,
   reply: FastifyReply,
 ) => {
@@ -89,7 +89,7 @@ export const updateProductHandler = async (
   }
 };
 
-export const deleteProductHandler = async (
+const deleteProductHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -106,4 +106,13 @@ export const deleteProductHandler = async (
     }
     throw err;
   }
+};
+
+export default {
+  getProductsHandler,
+  getProductHandler,
+  getMyProductsHandler,
+  createProductHandler,
+  updateProductHandler,
+  deleteProductHandler,
 };

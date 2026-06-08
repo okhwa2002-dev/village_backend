@@ -31,7 +31,7 @@ const toVillageContentDto = (
   publishedYn: fields.publishedYn,
 });
 
-export const getContentsHandler = async (
+const getContentsHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -39,7 +39,7 @@ export const getContentsHandler = async (
   return reply.send(successResponse(contents));
 };
 
-export const getContentsBySectionHandler = async (
+const getContentsBySectionHandler = async (
   req: FastifyRequest<{ Params: { section: string } }>,
   reply: FastifyReply,
 ) => {
@@ -47,7 +47,7 @@ export const getContentsBySectionHandler = async (
   return reply.send(successResponse(contents));
 };
 
-export const getContentsAdminHandler = async (
+const getContentsAdminHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -55,7 +55,7 @@ export const getContentsAdminHandler = async (
   return reply.send(successResponse(contents));
 };
 
-export const createContentHandler = async (
+const createContentHandler = async (
   req: FastifyRequest<{ Body: CreateVillageContentDto }>,
   reply: FastifyReply,
 ) => {
@@ -92,7 +92,9 @@ export const createContentHandler = async (
       .send(successResponse(content, "콘텐츠가 추가되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "FILE_GROUP_NOT_FOUND") {
-      return reply.code(404).send(errorResponse("파일 그룹을 찾을 수 없습니다"));
+      return reply
+        .code(404)
+        .send(errorResponse("파일 그룹을 찾을 수 없습니다"));
     }
     if (err instanceof Error && err.message === "INVALID_MAIN_INDEX") {
       return reply.code(400).send(errorResponse("mainIndex가 잘못되었습니다"));
@@ -101,7 +103,7 @@ export const createContentHandler = async (
   }
 };
 
-export const updateContentHandler = async (
+const updateContentHandler = async (
   req: FastifyRequest<{
     Params: { id: string };
     Body: UpdateVillageContentDto;
@@ -134,7 +136,9 @@ export const updateContentHandler = async (
       return reply.code(404).send(errorResponse("콘텐츠를 찾을 수 없습니다"));
     }
     if (err instanceof Error && err.message === "FILE_GROUP_NOT_FOUND") {
-      return reply.code(404).send(errorResponse("파일 그룹을 찾을 수 없습니다"));
+      return reply
+        .code(404)
+        .send(errorResponse("파일 그룹을 찾을 수 없습니다"));
     }
     if (err instanceof Error && err.message === "INVALID_MAIN_INDEX") {
       return reply.code(400).send(errorResponse("mainIndex가 잘못되었습니다"));
@@ -143,7 +147,7 @@ export const updateContentHandler = async (
   }
 };
 
-export const deleteContentHandler = async (
+const deleteContentHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -156,4 +160,13 @@ export const deleteContentHandler = async (
     }
     throw err;
   }
+};
+
+export default {
+  getContentsHandler,
+  getContentsBySectionHandler,
+  getContentsAdminHandler,
+  createContentHandler,
+  updateContentHandler,
+  deleteContentHandler,
 };

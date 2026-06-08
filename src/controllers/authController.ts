@@ -3,7 +3,7 @@ import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
 import { register, login, refresh, logout } from "../services/authService";
 import { successResponse, errorResponse } from "../utils/response";
 
-export const registerHandler = async (
+const registerHandler = async (
   req: FastifyRequest<{ Body: RegisterDto }>,
   reply: FastifyReply,
 ) => {
@@ -19,7 +19,7 @@ export const registerHandler = async (
   }
 };
 
-export const loginHandler = async (
+const loginHandler = async (
   req: FastifyRequest<{ Body: LoginDto }>,
   reply: FastifyReply,
 ) => {
@@ -45,7 +45,7 @@ export const loginHandler = async (
   }
 };
 
-export const refreshHandler = async (
+const refreshHandler = async (
   req: FastifyRequest<{ Body: RefreshDto }>,
   reply: FastifyReply,
 ) => {
@@ -72,17 +72,22 @@ export const refreshHandler = async (
   }
 };
 
-export const meHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const meHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   return reply.send(successResponse(req.user, "사용자 정보 조회"));
 };
 
-export const logoutHandler = async (
+const logoutHandler = async (
   req: FastifyRequest<{ Body: RefreshDto }>,
   reply: FastifyReply,
 ) => {
   await logout(req.body.refreshToken);
   return reply.send(successResponse(null, "로그아웃되었습니다"));
+};
+
+export default {
+  registerHandler,
+  loginHandler,
+  refreshHandler,
+  meHandler,
+  logoutHandler,
 };

@@ -17,15 +17,12 @@ import {
 } from "../services/commonCodeService";
 import { errorResponse, successResponse } from "../utils/response";
 
-export const getGroupsHandler = async (
-  _req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const getGroupsHandler = async (_req: FastifyRequest, reply: FastifyReply) => {
   const groups = await getGroups();
   return reply.send(successResponse(groups, "코드 그룹 목록"));
 };
 
-export const createGroupHandler = async (
+const createGroupHandler = async (
   req: FastifyRequest<{ Body: CreateGroupDto }>,
   reply: FastifyReply,
 ) => {
@@ -33,7 +30,7 @@ export const createGroupHandler = async (
   return reply.code(201).send(successResponse(group, "코드 그룹 생성"));
 };
 
-export const updateGroupHandler = async (
+const updateGroupHandler = async (
   req: FastifyRequest<{ Params: { id: string }; Body: UpdateGroupDto }>,
   reply: FastifyReply,
 ) => {
@@ -43,7 +40,7 @@ export const updateGroupHandler = async (
   return reply.send(successResponse(group, "코드 그룹 수정"));
 };
 
-export const deleteGroupHandler = async (
+const deleteGroupHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -51,7 +48,7 @@ export const deleteGroupHandler = async (
   return reply.send(successResponse(null, "코드 그룹 삭제"));
 };
 
-export const getCodesHandler = async (
+const getCodesHandler = async (
   req: FastifyRequest<{ Params: { groupId: string } }>,
   reply: FastifyReply,
 ) => {
@@ -59,7 +56,7 @@ export const getCodesHandler = async (
   return reply.send(successResponse(codes, "코드 목록"));
 };
 
-export const createCodeHandler = async (
+const createCodeHandler = async (
   req: FastifyRequest<{ Params: { groupId: string }; Body: CreateCodeDto }>,
   reply: FastifyReply,
 ) => {
@@ -67,7 +64,7 @@ export const createCodeHandler = async (
   return reply.code(201).send(successResponse(code, "코드 생성"));
 };
 
-export const updateCodeHandler = async (
+const updateCodeHandler = async (
   req: FastifyRequest<{ Params: { id: string }; Body: UpdateCodeDto }>,
   reply: FastifyReply,
 ) => {
@@ -77,10 +74,21 @@ export const updateCodeHandler = async (
   return reply.send(successResponse(code, "코드 수정"));
 };
 
-export const deleteCodeHandler = async (
+const deleteCodeHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
   await removeCode(req.params.id);
   return reply.send(successResponse(null, "코드 삭제"));
+};
+
+export default {
+  getGroupsHandler,
+  createGroupHandler,
+  updateGroupHandler,
+  deleteGroupHandler,
+  getCodesHandler,
+  createCodeHandler,
+  updateCodeHandler,
+  deleteCodeHandler,
 };

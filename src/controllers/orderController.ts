@@ -10,16 +10,13 @@ import {
 } from "../services/orderService";
 import { successResponse, errorResponse } from "../utils/response";
 
-export const getMyOrdersHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const getMyOrdersHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
   const orders = await getMyOrders(user.id);
   return reply.send(successResponse(orders));
 };
 
-export const getOrderHandler = async (
+const getOrderHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -38,7 +35,7 @@ export const getOrderHandler = async (
   }
 };
 
-export const createOrderHandler = async (
+const createOrderHandler = async (
   req: FastifyRequest<{ Body: CreateOrderDto }>,
   reply: FastifyReply,
 ) => {
@@ -65,7 +62,7 @@ export const createOrderHandler = async (
   }
 };
 
-export const cancelOrderHandler = async (
+const cancelOrderHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
@@ -86,7 +83,7 @@ export const cancelOrderHandler = async (
   }
 };
 
-export const getAdminOrdersHandler = async (
+const getAdminOrdersHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
@@ -94,7 +91,7 @@ export const getAdminOrdersHandler = async (
   return reply.send(successResponse(orders));
 };
 
-export const updateOrderStatusHandler = async (
+const updateOrderStatusHandler = async (
   req: FastifyRequest<{ Params: { id: string }; Body: { status: string } }>,
   reply: FastifyReply,
 ) => {
@@ -106,4 +103,13 @@ export const updateOrderStatusHandler = async (
       return reply.code(404).send(errorResponse("주문을 찾을 수 없습니다"));
     throw err;
   }
+};
+
+export default {
+  getMyOrdersHandler,
+  getOrderHandler,
+  createOrderHandler,
+  cancelOrderHandler,
+  getAdminOrdersHandler,
+  updateOrderStatusHandler,
 };

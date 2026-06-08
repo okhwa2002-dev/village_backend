@@ -1,14 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  getFarmersHandler,
-  getFarmerHandler,
-  getMyProfileHandler,
-  upsertProfileHandler,
-  getFarmersAdminHandler,
-  exportFarmersHandler,
-  approveFarmerHandler,
-  rejectFarmerHandler,
-} from "../controllers/farmerController";
+import farmerController from "../controllers/farmerController";
 import { UpsertFarmerProfileDto } from "../types/farmerTypes";
 import {
   authenticate,
@@ -20,13 +11,13 @@ export default async function farmerRoutes(app: FastifyInstance) {
   app.get(
     "/farmers",
     { schema: { tags: ["Farmer"], summary: "농민 목록" } },
-    getFarmersHandler,
+    farmerController.getFarmersHandler,
   );
 
   app.get<{ Params: { id: string } }>(
     "/farmers/:id",
     { schema: { tags: ["Farmer"], summary: "농민 상세" } },
-    getFarmerHandler,
+    farmerController.getFarmerHandler,
   );
 
   app.get(
@@ -39,7 +30,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    getMyProfileHandler,
+    farmerController.getMyProfileHandler,
   );
 
   app.put<{ Body: UpsertFarmerProfileDto }>(
@@ -62,7 +53,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, requireRole("FARMER")],
     },
-    upsertProfileHandler,
+    farmerController.upsertProfileHandler,
   );
 
   app.get(
@@ -82,7 +73,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS")],
     },
-    getFarmersAdminHandler,
+    farmerController.getFarmersAdminHandler,
   );
 
   app.get(
@@ -98,7 +89,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS")],
     },
-    exportFarmersHandler,
+    farmerController.exportFarmersHandler,
   );
 
   app.patch<{ Params: { id: string } }>(
@@ -111,7 +102,7 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS", "edit")],
     },
-    approveFarmerHandler,
+    farmerController.approveFarmerHandler,
   );
 
   app.patch<{ Params: { id: string } }>(
@@ -124,6 +115,6 @@ export default async function farmerRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS", "edit")],
     },
-    rejectFarmerHandler,
+    farmerController.rejectFarmerHandler,
   );
 }

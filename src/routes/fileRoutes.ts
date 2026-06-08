@@ -1,11 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  createFileGroupHandler,
-  uploadFileHandler,
-  getFilesHandler,
-  patchFileHandler,
-  deleteFileHandler,
-} from "../controllers/fileController";
+import fileController from "../controllers/fileController";
 import { authenticate } from "../plugins/authenticate";
 
 export default async function fileRoutes(app: FastifyInstance) {
@@ -29,7 +23,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    createFileGroupHandler,
+    fileController.createFileGroupHandler,
   );
 
   app.post(
@@ -43,7 +37,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    uploadFileHandler,
+    fileController.uploadFileHandler,
   );
 
   app.get<{ Params: { id: string } }>(
@@ -54,7 +48,7 @@ export default async function fileRoutes(app: FastifyInstance) {
         summary: "파일 그룹 내 파일 목록 조회",
       },
     },
-    getFilesHandler,
+    fileController.getFilesHandler,
   );
 
   app.patch<{
@@ -77,7 +71,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    patchFileHandler,
+    fileController.patchFileHandler,
   );
 
   app.delete<{ Params: { id: string } }>(
@@ -90,6 +84,6 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    deleteFileHandler,
+    fileController.deleteFileHandler,
   );
 }
