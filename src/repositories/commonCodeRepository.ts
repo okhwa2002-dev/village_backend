@@ -21,12 +21,12 @@ const toCode = (row: any): CommonCode => ({
   createdAt: row.created_at,
 });
 
-export const findAllGroups = async (): Promise<CommonCodeGroup[]> => {
+const findAllGroups = async (): Promise<CommonCodeGroup[]> => {
   const rows = await query<any>("commonCode", "findAllGroups");
   return rows.map(toGroup);
 };
 
-export const createGroup = async (params: {
+const createGroup = async (params: {
   code: string;
   name: string;
   description?: string | null;
@@ -36,7 +36,7 @@ export const createGroup = async (params: {
   return row ? toGroup(row) : null;
 };
 
-export const updateGroup = async (params: {
+const updateGroup = async (params: {
   id: string;
   name: string;
   description?: string | null;
@@ -46,19 +46,17 @@ export const updateGroup = async (params: {
   return row ? toGroup(row) : null;
 };
 
-export const softDeleteGroup = (id: string): Promise<number> =>
+const softDeleteGroup = (id: string): Promise<number> =>
   execute("commonCode", "softDeleteGroup", { id });
 
-export const findCodesByGroupId = async (
-  groupId: string,
-): Promise<CommonCode[]> => {
+const findCodesByGroupId = async (groupId: string): Promise<CommonCode[]> => {
   const rows = await query<any>("commonCode", "findCodesByGroupId", {
     groupId,
   });
   return rows.map(toCode);
 };
 
-export const createCode = async (params: {
+const createCode = async (params: {
   groupId: string;
   code: string;
   name: string;
@@ -70,7 +68,7 @@ export const createCode = async (params: {
   return row ? toCode(row) : null;
 };
 
-export const updateCode = async (params: {
+const updateCode = async (params: {
   id: string;
   name: string;
   extraValue?: string | null;
@@ -81,5 +79,16 @@ export const updateCode = async (params: {
   return row ? toCode(row) : null;
 };
 
-export const softDeleteCode = (id: string): Promise<number> =>
+const softDeleteCode = (id: string): Promise<number> =>
   execute("commonCode", "softDeleteCode", { id });
+
+export default {
+  findAllGroups,
+  createGroup,
+  updateGroup,
+  softDeleteGroup,
+  findCodesByGroupId,
+  createCode,
+  updateCode,
+  softDeleteCode,
+};

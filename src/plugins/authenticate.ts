@@ -1,8 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { SessionUser, UserRole } from "../types/commonTypes";
-import { getUserMenuPermissions } from "../repositories/permissionRepository";
-import { findUserById } from "../repositories/authRepository";
+import permissionRepo from "../repositories/permissionRepository";
+import authRepo from "../repositories/authRepository";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -38,7 +38,7 @@ export const authenticate = async (
       .send({ success: false, message: "유효하지 않은 토큰입니다" });
   }
 
-  const user = await findUserById(payload.userId);
+  const user = await authRepo.findUserById(payload.userId);
   if (!user || user.status !== "ACTIVE") {
     return reply
       .code(401)
@@ -69,7 +69,7 @@ export const checkMenuPermission =
   async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     let perms;
     try {
-      perms = await getUserMenuPermissions(req.user.id);
+      perms = await permissionRepo.getUserMenuPermissions(req.user.id);
     } catch {
       return reply
         .code(500)

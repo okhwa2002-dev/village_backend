@@ -30,7 +30,7 @@ vi.mock("jsonwebtoken", () => ({
 
 import * as pool from "../src/db/pool";
 import jwt from "jsonwebtoken";
-import { getUserMenuPermissions } from "../src/repositories/permissionRepository";
+import permissionRepo from "../src/repositories/permissionRepository";
 
 describe("permissionRepository", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -42,7 +42,7 @@ describe("permissionRepository", () => {
     ];
     vi.mocked(pool.query).mockResolvedValueOnce(mockPerms);
 
-    const result = await getUserMenuPermissions("1");
+    const result = await permissionRepo.getUserMenuPermissions("1");
 
     expect(pool.query).toHaveBeenCalledWith(
       "permission",
@@ -55,7 +55,7 @@ describe("permissionRepository", () => {
   it("권한이 없는 사용자는 빈 배열을 반환한다", async () => {
     vi.mocked(pool.query).mockResolvedValueOnce([]);
 
-    const result = await getUserMenuPermissions("999");
+    const result = await permissionRepo.getUserMenuPermissions("999");
 
     expect(pool.query).toHaveBeenCalledWith(
       "permission",

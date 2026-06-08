@@ -1,13 +1,5 @@
-import {
-  findAllContents,
-  findContentsBySection,
-  findAllContentsForAdmin,
-  findContentById,
-  createContent,
-  updateContent,
-  deleteContent,
-} from "../repositories/villageRepository";
-import { createGroup, getFilesByGroupMap, uploadFiles } from "./fileService";
+import villageRepo from "../repositories/villageRepository";
+import fileService from "./fileService";
 import {
   CreateVillageContentDto,
   UpdateVillageContentDto,
@@ -34,7 +26,7 @@ const attachFilesToContents = async <T extends VillageContent>(
   const fileGroupIds = contents
     .map((content) => content.fileGroupId)
     .filter((fileGroupId): fileGroupId is string => !!fileGroupId);
-  const fileMap = await getFilesByGroupMap(fileGroupIds);
+  const fileMap = await fileService.getFilesByGroupMap(fileGroupIds);
 
   return contents.map((content) => ({
     ...content,
@@ -50,26 +42,28 @@ const attachFilesToContent = async <T extends VillageContent | null>(
   return contentWithFiles;
 };
 
-export const getContents = async () =>
-  attachFilesToContents(await findAllContents());
+const getContents = async () =>
+  attachFilesToContents(await villageRepo.findAllContents());
 
-export const getContentsBySection = async (section: string) =>
-  attachFilesToContents(await findContentsBySection(section));
+const getContentsBySection = async (section: string) =>
+  attachFilesToContents(await villageRepo.findContentsBySection(section));
 
-export const getContentsForAdmin = async () =>
-  attachFilesToContents(await findAllContentsForAdmin());
+const getContentsForAdmin = async () =>
+  attachFilesToContents(await villageRepo.findAllContentsForAdmin());
 
-export const createVillageContent = (dto: CreateVillageContentDto) =>
-  createContent({
-    section: dto.section,
-    title: dto.title,
-    body: dto.body,
-    fileGroupId: dto.fileGroupId,
-    sortOrder: dto.sortOrder ?? 0,
-    publishedYn: dto.publishedYn ?? "N",
-  }).then(attachFilesToContent);
+const createVillageContent = (dto: CreateVillageContentDto) =>
+  villageRepo
+    .createContent({
+      section: dto.section,
+      title: dto.title,
+      body: dto.body,
+      fileGroupId: dto.fileGroupId,
+      sortOrder: dto.sortOrder ?? 0,
+      publishedYn: dto.publishedYn ?? "N",
+    })
+    .then(attachFilesToContent);
 
-export const createVillageContentWithFiles = async (
+const createVillageContentWithFiles = async (
   dto: CreateVillageContentDto,
   options: VillageContentFileOptions,
 ) => {
@@ -77,11 +71,11 @@ export const createVillageContentWithFiles = async (
 
   if (options.files?.length) {
     if (!fileGroupId) {
-      const group = await createGroup("VILLAGE", options.userId);
+      const group = await fileService.createGroup("VILLAGE", options.userId);
       fileGroupId = group.id;
     }
 
-    const uploaded = await uploadFiles({
+    await fileService.uploadFiles({
       fileGroupId,
       files: options.files,
       mainIndex: options.mainIndex ?? 0,
@@ -90,7 +84,7 @@ export const createVillageContentWithFiles = async (
     });
   }
 
-  const content = await createContent({
+  const content = await villageRepo.createContent({
     section: dto.section,
     title: dto.title,
     body: dto.body,
@@ -103,11 +97,11 @@ export const createVillageContentWithFiles = async (
   return attachFilesToContent(content);
 };
 
-export const updateVillageContent = async (
+const updateVillageContent = async (
   id: string,
   dto: UpdateVillageContentDto,
 ) => {
-  const content = await updateContent({
+  const content = await villageRepo.updateContent({
     id,
     section: dto.section,
     title: dto.title,
@@ -120,12 +114,12 @@ export const updateVillageContent = async (
   return attachFilesToContent(content);
 };
 
-export const updateVillageContentWithFiles = async (
+const updateVillageContentWithFiles = async (
   id: string,
   dto: UpdateVillageContentDto,
   options: VillageContentFileOptions,
 ) => {
-  const existing = await findContentById(id);
+  const existing = await villageRepo.findContentById(id);
   if (!existing) throw new Error("CONTENT_NOT_FOUND");
 
   let fileGroupId = dto.fileGroupId ?? existing.fileGroupId ?? undefined;
@@ -134,11 +128,11 @@ export const updateVillageContentWithFiles = async (
     const hadFileGroup = !!fileGroupId;
 
     if (!fileGroupId) {
-      const group = await createGroup("VILLAGE", options.userId);
+      const group = await fileService.createGroup("VILLAGE", options.userId);
       fileGroupId = group.id;
     }
 
-    const uploaded = await uploadFiles({
+    await fileService.uploadFiles({
       fileGroupId,
       files: options.files,
       mainIndex: options.mainIndex ?? (hadFileGroup ? undefined : 0),
@@ -147,7 +141,7 @@ export const updateVillageContentWithFiles = async (
     });
   }
 
-  const content = await updateContent({
+  const content = await villageRepo.updateContent({
     id,
     section: dto.section,
     title: dto.title,
@@ -161,7 +155,18 @@ export const updateVillageContentWithFiles = async (
   return attachFilesToContent(content);
 };
 
-export const deleteVillageContent = async (id: string) => {
-  const count = await deleteContent(id);
+const deleteVillageContent = async (id: string) => {
+  const count = await villageRepo.deleteContent(id);
   if (count === 0) throw new Error("CONTENT_NOT_FOUND");
+};
+
+export default {
+  getContents,
+  getContentsBySection,
+  getContentsForAdmin,
+  createVillageContent,
+  createVillageContentWithFiles,
+  updateVillageContent,
+  updateVillageContentWithFiles,
+  deleteVillageContent,
 };

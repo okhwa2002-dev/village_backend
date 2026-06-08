@@ -1,13 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
-import {
-  getProducts,
-  getProductById,
-  getMyProducts,
-  createProductByFarmer,
-  updateProductByFarmer,
-  deleteProductByFarmer,
-} from "../services/productService";
+import productService from "../services/productService";
 import { successResponse, errorResponse } from "../utils/response";
 
 const getProductsHandler = async (
@@ -16,7 +9,10 @@ const getProductsHandler = async (
   }>,
   reply: FastifyReply,
 ) => {
-  const products = await getProducts(req.query.category, req.query.farmerId);
+  const products = await productService.getProducts(
+    req.query.category,
+    req.query.farmerId,
+  );
   return reply.send(successResponse(products));
 };
 
@@ -25,7 +21,7 @@ const getProductHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const product = await getProductById(req.params.id);
+    const product = await productService.getProductById(req.params.id);
     return reply.send(successResponse(product));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "PRODUCT_NOT_FOUND")
@@ -40,7 +36,7 @@ const getMyProductsHandler = async (
 ) => {
   try {
     const user = req.user;
-    const products = await getMyProducts(user.id);
+    const products = await productService.getMyProducts(user.id);
     return reply.send(successResponse(products));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "PROFILE_NOT_FOUND")
@@ -55,7 +51,10 @@ const createProductHandler = async (
 ) => {
   try {
     const user = req.user;
-    const product = await createProductByFarmer(user.id, req.body);
+    const product = await productService.createProductByFarmer(
+      user.id,
+      req.body,
+    );
     return reply
       .code(201)
       .send(successResponse(product, "상품이 등록되었습니다"));
@@ -72,7 +71,7 @@ const updateProductHandler = async (
 ) => {
   try {
     const user = req.user;
-    const product = await updateProductByFarmer(
+    const product = await productService.updateProductByFarmer(
       user.id,
       req.params.id,
       req.body,
@@ -95,7 +94,7 @@ const deleteProductHandler = async (
 ) => {
   try {
     const user = req.user;
-    await deleteProductByFarmer(user.id, req.params.id);
+    await productService.deleteProductByFarmer(user.id, req.params.id);
     return reply.send(successResponse(null, "상품이 삭제되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error) {

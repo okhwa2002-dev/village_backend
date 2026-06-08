@@ -39,17 +39,17 @@ const groupRows = (rows: any[]): MenuGroup[] => {
   return Array.from(groupMap.values());
 };
 
-export const findAllMenus = async (): Promise<MenuGroup[]> => {
+const findAllMenus = async (): Promise<MenuGroup[]> => {
   const rows = await query<any>("menu", "findAllMenus");
   return groupRows(rows);
 };
 
-export const findPublicMenus = async (): Promise<MenuGroup[]> => {
+const findPublicMenus = async (): Promise<MenuGroup[]> => {
   const rows = await query<any>("menu", "findPublicMenus");
   return groupRows(rows);
 };
 
-export const createMenu = async (params: {
+const createMenu = async (params: {
   groupId?: string | null;
   parentId?: string | null;
   code: string;
@@ -65,7 +65,7 @@ export const createMenu = async (params: {
   return row ? toMenu(row) : null;
 };
 
-export const updateMenu = async (params: {
+const updateMenu = async (params: {
   id: string;
   groupId?: string | null;
   parentId?: string | null;
@@ -82,5 +82,13 @@ export const updateMenu = async (params: {
   return row ? toMenu(row) : null;
 };
 
-export const softDeleteMenuCascade = (id: string): Promise<number> =>
+const softDeleteMenuCascade = (id: string): Promise<number> =>
   execute("menu", "softDeleteMenuCascade", { id });
+
+export default {
+  findAllMenus,
+  findPublicMenus,
+  createMenu,
+  updateMenu,
+  softDeleteMenuCascade,
+};

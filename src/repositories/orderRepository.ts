@@ -32,34 +32,30 @@ const toOrderItem = (row: any): OrderItemDetail => ({
   fileGroupId: row.file_group_id ?? null,
 });
 
-export const findOrdersByUserId = async (userId: string): Promise<Order[]> => {
+const findOrdersByUserId = async (userId: string): Promise<Order[]> => {
   const rows = await query<any>("order", "findByUserId", { userId });
   return rows.map(toOrder);
 };
 
-export const findOrderById = async (id: string): Promise<Order | null> => {
+const findOrderById = async (id: string): Promise<Order | null> => {
   const row = await queryOne<any>("order", "findById", { id });
   return row ? toOrder(row) : null;
 };
 
-export const findOrderItems = async (
-  orderId: string,
-): Promise<OrderItemDetail[]> => {
+const findOrderItems = async (orderId: string): Promise<OrderItemDetail[]> => {
   const rows = await query<any>("order", "findItems", { orderId });
   return rows.map(toOrderItem);
 };
 
-export const findAllOrdersForAdmin = async (): Promise<Order[]> => {
+const findAllOrdersForAdmin = async (): Promise<Order[]> => {
   const rows = await query<any>("order", "findAllForAdmin");
   return rows.map(toOrder);
 };
 
-export const updateOrderStatus = (
-  id: string,
-  status: string,
-): Promise<number> => execute("order", "updateStatus", { id, status });
+const updateOrderStatus = (id: string, status: string): Promise<number> =>
+  execute("order", "updateStatus", { id, status });
 
-export const createOrderInTx = async (
+const createOrderInTx = async (
   client: PoolClient,
   params: {
     orderNumber: string;
@@ -76,7 +72,7 @@ export const createOrderInTx = async (
   return row ? toOrder(row) : null;
 };
 
-export const createOrderItemInTx = async (
+const createOrderItemInTx = async (
   client: PoolClient,
   params: {
     orderId: string;
@@ -89,7 +85,7 @@ export const createOrderItemInTx = async (
   return row ? toOrderItem(row) : null;
 };
 
-export const decreaseStockInTx = (
+const decreaseStockInTx = (
   client: PoolClient,
   productId: string,
   quantity: number,
@@ -98,3 +94,14 @@ export const decreaseStockInTx = (
     id: productId,
     quantity,
   });
+
+export default {
+  findOrdersByUserId,
+  findOrderById,
+  findOrderItems,
+  findAllOrdersForAdmin,
+  updateOrderStatus,
+  createOrderInTx,
+  createOrderItemInTx,
+  decreaseStockInTx,
+};

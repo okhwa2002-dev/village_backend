@@ -1,23 +1,14 @@
-import {
-  createFileGroup,
-  findFileGroupById,
-  createFile,
-  findFilesByGroupId,
-  findFileById,
-  clearMainYn,
-  updateFile,
-  softDeleteFile,
-} from "../repositories/fileRepository";
+import fileRepo from "../repositories/fileRepository";
 import { saveFile, removeFile } from "./storage/localStorageAdapter";
 import { FileRecord, FileRefType } from "../types/fileTypes";
 
-export const createGroup = async (refType: FileRefType, userId: string) => {
-  const group = await createFileGroup({ refType, createdBy: userId });
+const createGroup = async (refType: FileRefType, userId: string) => {
+  const group = await fileRepo.createFileGroup({ refType, createdBy: userId });
   if (!group) throw new Error("FILE_GROUP_CREATE_FAILED");
   return group;
 };
 
-export const uploadFile = async (params: {
+const uploadFile = async (params: {
   fileGroupId: string;
   buffer: Buffer;
   originalName: string;
@@ -27,7 +18,7 @@ export const uploadFile = async (params: {
   sortOrder: number;
   userId: string;
 }) => {
-  const group = await findFileGroupById(params.fileGroupId);
+  const group = await fileRepo.findFileGroupById(params.fileGroupId);
   if (!group) throw new Error("FILE_GROUP_NOT_FOUND");
 
   const saved = await saveFile(
@@ -37,10 +28,10 @@ export const uploadFile = async (params: {
   );
 
   if (params.isMainYn === "Y") {
-    await clearMainYn(params.fileGroupId);
+    await fileRepo.clearMainYn(params.fileGroupId);
   }
 
-  const file = await createFile({
+  const file = await fileRepo.createFile({
     fileGroupId: params.fileGroupId,
     originalName: params.originalName,
     storedName: saved.storedName,
@@ -57,7 +48,7 @@ export const uploadFile = async (params: {
   return file;
 };
 
-export const uploadFiles = async (params: {
+const uploadFiles = async (params: {
   fileGroupId: string;
   files: Array<{
     buffer: Buffer;
@@ -69,7 +60,7 @@ export const uploadFiles = async (params: {
   sortStartOrder: number;
   userId: string;
 }) => {
-  const group = await findFileGroupById(params.fileGroupId);
+  const group = await fileRepo.findFileGroupById(params.fileGroupId);
   if (!group) throw new Error("FILE_GROUP_NOT_FOUND");
   if (params.files.length === 0) throw new Error("FILE_REQUIRED");
 
@@ -81,7 +72,7 @@ export const uploadFiles = async (params: {
   }
 
   if (params.mainIndex !== undefined) {
-    await clearMainYn(params.fileGroupId);
+    await fileRepo.clearMainYn(params.fileGroupId);
   }
 
   const uploadedFiles = [];
@@ -92,7 +83,7 @@ export const uploadFiles = async (params: {
       group.refType,
     );
 
-    const file = await createFile({
+    const file = await fileRepo.createFile({
       fileGroupId: params.fileGroupId,
       originalName: multipartFile.originalName,
       storedName: saved.storedName,
@@ -109,41 +100,40 @@ export const uploadFiles = async (params: {
     uploadedFiles.push(file);
   }
 
-  return {
-    fileGroupId: params.fileGroupId,
-    files: uploadedFiles,
-  };
+  return { fileGroupId: params.fileGroupId, files: uploadedFiles };
 };
 
-export const getFilesByGroup = (fileGroupId: string) =>
-  findFilesByGroupId(fileGroupId);
+const getFilesByGroup = (fileGroupId: string) =>
+  fileRepo.findFilesByGroupId(fileGroupId);
 
-export const getFilesByGroupMap = async (fileGroupIds: string[]) => {
+const getFilesByGroupMap = async (fileGroupIds: string[]) => {
   const uniqueGroupIds = Array.from(new Set(fileGroupIds.filter(Boolean)));
   const entries: Array<[string, FileRecord[]]> = await Promise.all(
-    uniqueGroupIds.map(async (fileGroupId) => [
-      fileGroupId,
-      await findFilesByGroupId(fileGroupId),
-    ] as [string, FileRecord[]]),
+    uniqueGroupIds.map(
+      async (fileGroupId) =>
+        [fileGroupId, await fileRepo.findFilesByGroupId(fileGroupId)] as [
+          string,
+          FileRecord[],
+        ],
+    ),
   );
-
   return new Map(entries);
 };
 
-export const patchFile = async (params: {
+const patchFile = async (params: {
   id: string;
   sortOrder?: number;
   isMainYn?: "Y" | "N";
   userId: string;
 }) => {
-  const file = await findFileById(params.id);
+  const file = await fileRepo.findFileById(params.id);
   if (!file) throw new Error("FILE_NOT_FOUND");
 
   if (params.isMainYn === "Y") {
-    await clearMainYn(file.fileGroupId);
+    await fileRepo.clearMainYn(file.fileGroupId);
   }
 
-  const updated = await updateFile({
+  const updated = await fileRepo.updateFile({
     id: params.id,
     sortOrder: params.sortOrder,
     isMainYn: params.isMainYn,
@@ -153,11 +143,11 @@ export const patchFile = async (params: {
   return updated;
 };
 
-export const removeFileById = async (id: string, userId: string) => {
-  const file = await findFileById(id);
+const removeFileById = async (id: string, userId: string) => {
+  const file = await fileRepo.findFileById(id);
   if (!file) throw new Error("FILE_NOT_FOUND");
 
-  const count = await softDeleteFile(id, userId);
+  const count = await fileRepo.softDeleteFile(id, userId);
   if (count === 0) throw new Error("FILE_NOT_FOUND");
 
   try {
@@ -165,4 +155,14 @@ export const removeFileById = async (id: string, userId: string) => {
   } catch {
     // 물리 파일 삭제 실패는 무시 (별도 배치로 정리)
   }
+};
+
+export default {
+  createGroup,
+  uploadFile,
+  uploadFiles,
+  getFilesByGroup,
+  getFilesByGroupMap,
+  patchFile,
+  removeFileById,
 };

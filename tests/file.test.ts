@@ -39,13 +39,7 @@ vi.mock("jsonwebtoken", () => ({
 
 import * as pool from "../src/db/pool";
 import jwt from "jsonwebtoken";
-import {
-  createGroup,
-  uploadFile,
-  getFilesByGroup,
-  patchFile,
-  removeFileById,
-} from "../src/services/fileService";
+import fileService from "../src/services/fileService";
 
 describe("fileService", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -61,7 +55,7 @@ describe("fileService", () => {
         created_by: null,
       });
 
-      const result = await createGroup("PRODUCT", "10");
+      const result = await fileService.createGroup("PRODUCT", "10");
 
       expect(pool.queryOne).toHaveBeenCalledWith("file", "createGroup", {
         refType: "PRODUCT",
@@ -79,7 +73,7 @@ describe("fileService", () => {
     it("생성 실패 시 FILE_GROUP_CREATE_FAILED 에러를 던진다", async () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
-      await expect(createGroup("PRODUCT", "10")).rejects.toThrow(
+      await expect(fileService.createGroup("PRODUCT", "10")).rejects.toThrow(
         "FILE_GROUP_CREATE_FAILED",
       );
     });
@@ -90,7 +84,7 @@ describe("fileService", () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
       await expect(
-        uploadFile({
+        fileService.uploadFile({
           fileGroupId: "999",
           buffer: Buffer.from("data"),
           originalName: "test.jpg",
@@ -119,7 +113,7 @@ describe("fileService", () => {
         .mockResolvedValueOnce(mockFile);
       vi.mocked(pool.execute).mockResolvedValueOnce(1);
 
-      await uploadFile({
+      await fileService.uploadFile({
         fileGroupId: "1",
         buffer: Buffer.from("data"),
         originalName: "test.jpg",
@@ -140,9 +134,9 @@ describe("fileService", () => {
     it("파일이 없으면 FILE_NOT_FOUND 에러를 던진다", async () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
-      await expect(patchFile({ id: "999", userId: "1" })).rejects.toThrow(
-        "FILE_NOT_FOUND",
-      );
+      await expect(
+        fileService.patchFile({ id: "999", userId: "1" }),
+      ).rejects.toThrow("FILE_NOT_FOUND");
     });
   });
 });

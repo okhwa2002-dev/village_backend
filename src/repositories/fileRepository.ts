@@ -3,7 +3,6 @@ import {
   queryOne,
   execute,
   withTransaction,
-  clientQuery,
   clientExecute,
   clientQueryOne,
 } from "../db/pool";
@@ -33,7 +32,7 @@ const toFileRecord = (row: any): FileRecord => ({
   updatedAt: row.updated_at ?? null,
 });
 
-export const createFileGroup = async (params: {
+const createFileGroup = async (params: {
   refType: string;
   createdBy: string;
 }): Promise<FileGroup | null> => {
@@ -41,14 +40,12 @@ export const createFileGroup = async (params: {
   return row ? toFileGroup(row) : null;
 };
 
-export const findFileGroupById = async (
-  id: string,
-): Promise<FileGroup | null> => {
+const findFileGroupById = async (id: string): Promise<FileGroup | null> => {
   const row = await queryOne<any>("file", "findGroupById", { id });
   return row ? toFileGroup(row) : null;
 };
 
-export const createFile = async (params: {
+const createFile = async (params: {
   fileGroupId: string;
   originalName: string;
   storedName: string;
@@ -65,22 +62,22 @@ export const createFile = async (params: {
   return row ? toFileRecord(row) : null;
 };
 
-export const findFilesByGroupId = async (
+const findFilesByGroupId = async (
   fileGroupId: string,
 ): Promise<FileRecord[]> => {
   const rows = await query<any>("file", "findFilesByGroupId", { fileGroupId });
   return rows.map(toFileRecord);
 };
 
-export const findFileById = async (id: string): Promise<FileRecord | null> => {
+const findFileById = async (id: string): Promise<FileRecord | null> => {
   const row = await queryOne<any>("file", "findFileById", { id });
   return row ? toFileRecord(row) : null;
 };
 
-export const clearMainYn = (fileGroupId: string): Promise<number> =>
+const clearMainYn = (fileGroupId: string): Promise<number> =>
   execute("file", "clearMainYn", { fileGroupId });
 
-export const promoteMainFile = (
+const promoteMainFile = (
   fileId: string,
   fileGroupId: string,
   updatedBy: string,
@@ -95,7 +92,7 @@ export const promoteMainFile = (
     return row ? toFileRecord(row) : null;
   });
 
-export const updateFile = async (params: {
+const updateFile = async (params: {
   id: string;
   sortOrder?: number;
   isMainYn?: string;
@@ -105,7 +102,17 @@ export const updateFile = async (params: {
   return row ? toFileRecord(row) : null;
 };
 
-export const softDeleteFile = (
-  id: string,
-  deletedBy: string,
-): Promise<number> => execute("file", "deleteFile", { id, deletedBy });
+const softDeleteFile = (id: string, deletedBy: string): Promise<number> =>
+  execute("file", "deleteFile", { id, deletedBy });
+
+export default {
+  createFileGroup,
+  findFileGroupById,
+  createFile,
+  findFilesByGroupId,
+  findFileById,
+  clearMainYn,
+  promoteMainFile,
+  updateFile,
+  softDeleteFile,
+};

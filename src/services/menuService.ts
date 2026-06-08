@@ -1,18 +1,12 @@
-import {
-  createMenu,
-  findAllMenus,
-  findPublicMenus,
-  softDeleteMenuCascade,
-  updateMenu,
-} from "../repositories/menuRepository";
+import menuRepo from "../repositories/menuRepository";
 import { CreateMenuDto, UpdateMenuDto } from "../types/menuTypes";
 
-export const getMenus = () => findAllMenus();
+const getMenus = () => menuRepo.findAllMenus();
 
-export const getPublicMenus = () => findPublicMenus();
+const getPublicMenus = () => menuRepo.findPublicMenus();
 
-export const addMenu = (dto: CreateMenuDto) =>
-  createMenu({
+const addMenu = (dto: CreateMenuDto) =>
+  menuRepo.createMenu({
     groupId: dto.groupId ?? null,
     parentId: dto.parentId ?? null,
     code: dto.code,
@@ -25,8 +19,8 @@ export const addMenu = (dto: CreateMenuDto) =>
     visibleYn: dto.visibleYn ?? "Y",
   });
 
-export const editMenu = (id: string, dto: UpdateMenuDto) =>
-  updateMenu({
+const editMenu = (id: string, dto: UpdateMenuDto) =>
+  menuRepo.updateMenu({
     id,
     groupId: dto.groupId ?? null,
     parentId: dto.parentId ?? null,
@@ -40,4 +34,6 @@ export const editMenu = (id: string, dto: UpdateMenuDto) =>
     visibleYn: dto.visibleYn ?? "Y",
   });
 
-export const removeMenu = (id: string) => softDeleteMenuCascade(id);
+const removeMenu = (id: string) => menuRepo.softDeleteMenuCascade(id);
+
+export default { getMenus, getPublicMenus, addMenu, editMenu, removeMenu };

@@ -3,16 +3,7 @@ import {
   CreateVillageContentDto,
   UpdateVillageContentDto,
 } from "../types/villageTypes";
-import {
-  getContents,
-  getContentsBySection,
-  getContentsForAdmin,
-  createVillageContent,
-  createVillageContentWithFiles,
-  updateVillageContent,
-  updateVillageContentWithFiles,
-  deleteVillageContent,
-} from "../services/villageService";
+import villageService from "../services/villageService";
 import {
   isMultipartRequest,
   parseMultipartWithFiles,
@@ -35,7 +26,7 @@ const getContentsHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const contents = await getContents();
+  const contents = await villageService.getContents();
   return reply.send(successResponse(contents));
 };
 
@@ -43,7 +34,9 @@ const getContentsBySectionHandler = async (
   req: FastifyRequest<{ Params: { section: string } }>,
   reply: FastifyReply,
 ) => {
-  const contents = await getContentsBySection(req.params.section);
+  const contents = await villageService.getContentsBySection(
+    req.params.section,
+  );
   return reply.send(successResponse(contents));
 };
 
@@ -51,7 +44,7 @@ const getContentsAdminHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const contents = await getContentsForAdmin();
+  const contents = await villageService.getContentsForAdmin();
   return reply.send(successResponse(contents));
 };
 
@@ -71,7 +64,7 @@ const createContentHandler = async (
           .send(errorResponse("section과 title이 필요합니다"));
       }
 
-      const content = await createVillageContentWithFiles(
+      const content = await villageService.createVillageContentWithFiles(
         dto as CreateVillageContentDto,
         {
           files,
@@ -86,7 +79,7 @@ const createContentHandler = async (
         .send(successResponse(content, "콘텐츠가 추가되었습니다"));
     }
 
-    const content = await createVillageContent(req.body);
+    const content = await villageService.createVillageContent(req.body);
     return reply
       .code(201)
       .send(successResponse(content, "콘텐츠가 추가되었습니다"));
@@ -115,7 +108,7 @@ const updateContentHandler = async (
       const user = req.user;
       const { fields, files } = await parseMultipartWithFiles(req);
 
-      const content = await updateVillageContentWithFiles(
+      const content = await villageService.updateVillageContentWithFiles(
         req.params.id,
         toVillageContentDto(fields) as UpdateVillageContentDto,
         {
@@ -129,7 +122,10 @@ const updateContentHandler = async (
       return reply.send(successResponse(content, "콘텐츠가 수정되었습니다"));
     }
 
-    const content = await updateVillageContent(req.params.id, req.body);
+    const content = await villageService.updateVillageContent(
+      req.params.id,
+      req.body,
+    );
     return reply.send(successResponse(content, "콘텐츠가 수정되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "CONTENT_NOT_FOUND") {
@@ -152,7 +148,7 @@ const deleteContentHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    await deleteVillageContent(req.params.id);
+    await villageService.deleteVillageContent(req.params.id);
     return reply.send(successResponse(null, "콘텐츠가 삭제되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "CONTENT_NOT_FOUND") {

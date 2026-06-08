@@ -1,18 +1,11 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { CreateOrderDto } from "../types/orderTypes";
-import {
-  getMyOrders,
-  getOrderById,
-  createOrder,
-  cancelOrder,
-  getAllOrdersForAdmin,
-  updateOrderStatusByAdmin,
-} from "../services/orderService";
+import orderService from "../services/orderService";
 import { successResponse, errorResponse } from "../utils/response";
 
 const getMyOrdersHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
-  const orders = await getMyOrders(user.id);
+  const orders = await orderService.getMyOrders(user.id);
   return reply.send(successResponse(orders));
 };
 
@@ -22,7 +15,7 @@ const getOrderHandler = async (
 ) => {
   try {
     const user = req.user;
-    const order = await getOrderById(user.id, req.params.id);
+    const order = await orderService.getOrderById(user.id, req.params.id);
     return reply.send(successResponse(order));
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -41,7 +34,7 @@ const createOrderHandler = async (
 ) => {
   try {
     const user = req.user;
-    const order = await createOrder(user.id, req.body);
+    const order = await orderService.createOrder(user.id, req.body);
     return reply
       .code(201)
       .send(successResponse(order, "주문이 완료되었습니다"));
@@ -68,7 +61,7 @@ const cancelOrderHandler = async (
 ) => {
   try {
     const user = req.user;
-    await cancelOrder(user.id, req.params.id);
+    await orderService.cancelOrder(user.id, req.params.id);
     return reply.send(successResponse(null, "주문이 취소되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -87,7 +80,7 @@ const getAdminOrdersHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const orders = await getAllOrdersForAdmin();
+  const orders = await orderService.getAllOrdersForAdmin();
   return reply.send(successResponse(orders));
 };
 
@@ -96,7 +89,7 @@ const updateOrderStatusHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    await updateOrderStatusByAdmin(req.params.id, req.body.status);
+    await orderService.updateOrderStatusByAdmin(req.params.id, req.body.status);
     return reply.send(successResponse(null, "주문 상태가 변경되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "ORDER_NOT_FOUND")

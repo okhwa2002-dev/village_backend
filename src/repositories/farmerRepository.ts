@@ -14,26 +14,24 @@ const toFarmerProfile = (row: any): FarmerProfile => ({
   createdAt: row.created_at ?? undefined,
 });
 
-export const findAllFarmers = async (): Promise<FarmerProfile[]> => {
+const findAllFarmers = async (): Promise<FarmerProfile[]> => {
   const rows = await query<any>("farmer", "findAll");
   return rows.map(toFarmerProfile);
 };
 
-export const findFarmerById = async (
-  id: string,
-): Promise<FarmerProfile | null> => {
+const findFarmerById = async (id: string): Promise<FarmerProfile | null> => {
   const row = await queryOne<any>("farmer", "findById", { id });
   return row ? toFarmerProfile(row) : null;
 };
 
-export const findFarmerByUserId = async (
+const findFarmerByUserId = async (
   userId: string,
 ): Promise<FarmerProfile | null> => {
   const row = await queryOne<any>("farmer", "findByUserId", { userId });
   return row ? toFarmerProfile(row) : null;
 };
 
-export const createFarmerProfile = async (params: {
+const createFarmerProfile = async (params: {
   userId: string;
   name: string;
   bio?: string;
@@ -44,7 +42,7 @@ export const createFarmerProfile = async (params: {
   return row ? toFarmerProfile(row) : null;
 };
 
-export const updateFarmerProfile = async (params: {
+const updateFarmerProfile = async (params: {
   userId: string;
   name?: string;
   bio?: string;
@@ -55,7 +53,7 @@ export const updateFarmerProfile = async (params: {
   return row ? toFarmerProfile(row) : null;
 };
 
-export const findAllFarmersForAdmin = async (
+const findAllFarmersForAdmin = async (
   page: number,
   limit: number,
 ): Promise<PaginatedResult<FarmerProfile>> => {
@@ -72,12 +70,23 @@ export const findAllFarmersForAdmin = async (
   };
 };
 
-export const findAllFarmersForExport = async (): Promise<FarmerProfile[]> => {
+const findAllFarmersForExport = async (): Promise<FarmerProfile[]> => {
   const rows = await query<any>("farmer", "findAllForAdminExport");
   return rows.map(toFarmerProfile);
 };
 
-export const updateFarmerUserStatus = (
+const updateFarmerUserStatus = (
   userId: string,
   status: string,
 ): Promise<number> => execute("farmer", "updateUserStatus", { userId, status });
+
+export default {
+  findAllFarmers,
+  findFarmerById,
+  findFarmerByUserId,
+  createFarmerProfile,
+  updateFarmerProfile,
+  findAllFarmersForAdmin,
+  findAllFarmersForExport,
+  updateFarmerUserStatus,
+};

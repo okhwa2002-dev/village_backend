@@ -14,31 +14,29 @@ const toVillageContent = (row: any): VillageContent => ({
   files: [],
 });
 
-export const findAllContents = async (): Promise<VillageContent[]> => {
+const findAllContents = async (): Promise<VillageContent[]> => {
   const rows = await query<any>("village", "findAll");
   return rows.map(toVillageContent);
 };
 
-export const findContentsBySection = async (
+const findContentsBySection = async (
   section: string,
 ): Promise<VillageContent[]> => {
   const rows = await query<any>("village", "findBySection", { section });
   return rows.map(toVillageContent);
 };
 
-export const findAllContentsForAdmin = async (): Promise<VillageContent[]> => {
+const findAllContentsForAdmin = async (): Promise<VillageContent[]> => {
   const rows = await query<any>("village", "findAllForAdmin");
   return rows.map(toVillageContent);
 };
 
-export const findContentById = async (
-  id: string,
-): Promise<VillageContent | null> => {
+const findContentById = async (id: string): Promise<VillageContent | null> => {
   const row = await queryOne<any>("village", "findById", { id });
   return row ? toVillageContent(row) : null;
 };
 
-export const createContent = async (params: {
+const createContent = async (params: {
   section: string;
   title: string;
   body?: string;
@@ -50,7 +48,7 @@ export const createContent = async (params: {
   return row ? toVillageContent(row) : null;
 };
 
-export const updateContent = async (params: {
+const updateContent = async (params: {
   id: string;
   section?: string;
   title?: string;
@@ -63,5 +61,15 @@ export const updateContent = async (params: {
   return row ? toVillageContent(row) : null;
 };
 
-export const deleteContent = (id: string): Promise<number> =>
+const deleteContent = (id: string): Promise<number> =>
   execute("village", "delete", { id });
+
+export default {
+  findAllContents,
+  findContentsBySection,
+  findAllContentsForAdmin,
+  findContentById,
+  createContent,
+  updateContent,
+  deleteContent,
+};

@@ -1,17 +1,11 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { AddCartItemDto, UpdateCartItemDto } from "../types/cartTypes";
-import {
-  getCart,
-  addCartItem,
-  updateCartItem,
-  removeCartItem,
-  clearCart,
-} from "../services/cartService";
+import cartService from "../services/cartService";
 import { successResponse, errorResponse } from "../utils/response";
 
 const getCartHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
-  const cart = await getCart(user.id);
+  const cart = await cartService.getCart(user.id);
   return reply.send(successResponse(cart));
 };
 
@@ -21,7 +15,7 @@ const addCartItemHandler = async (
 ) => {
   try {
     const user = req.user;
-    const item = await addCartItem(user.id, req.body);
+    const item = await cartService.addCartItem(user.id, req.body);
     return reply
       .code(201)
       .send(successResponse(item, "장바구니에 추가되었습니다"));
@@ -38,7 +32,7 @@ const updateCartItemHandler = async (
 ) => {
   try {
     const user = req.user;
-    await updateCartItem(user.id, req.params.itemId, req.body);
+    await cartService.updateCartItem(user.id, req.params.itemId, req.body);
     return reply.send(successResponse(null, "수량이 변경되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -61,7 +55,7 @@ const removeCartItemHandler = async (
 ) => {
   try {
     const user = req.user;
-    await removeCartItem(user.id, req.params.itemId);
+    await cartService.removeCartItem(user.id, req.params.itemId);
     return reply.send(successResponse(null, "아이템이 삭제되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "ITEM_NOT_FOUND")
@@ -74,7 +68,7 @@ const removeCartItemHandler = async (
 
 const clearCartHandler = async (req: FastifyRequest, reply: FastifyReply) => {
   const user = req.user;
-  await clearCart(user.id);
+  await cartService.clearCart(user.id);
   return reply.send(successResponse(null, "장바구니가 비워졌습니다"));
 };
 

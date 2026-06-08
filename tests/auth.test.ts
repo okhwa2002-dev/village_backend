@@ -40,17 +40,9 @@ vi.mock("jsonwebtoken", () => ({
 }));
 
 import * as pool from "../src/db/pool";
-import {
-  findUserByLoginId,
-  findUserById,
-  saveRefreshToken,
-  findRefreshToken,
-  revokeToken,
-  revokeFamily,
-  updateLastLoginAt,
-} from "../src/repositories/authRepository";
+import authRepo from "../src/repositories/authRepository";
 import * as hash from "../src/utils/hash";
-import { register, login, refresh, logout } from "../src/services/authService";
+import authService from "../src/services/authService";
 import buildApp from "../src/app";
 import { FastifyInstance } from "fastify";
 
@@ -73,7 +65,7 @@ describe("authRepository", () => {
 
   it("findUserByLoginId — pool.queryOne을 올바른 인수로 호출한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-    await findUserByLoginId("admin01");
+    await authRepo.findUserByLoginId("admin01");
     expect(pool.queryOne).toHaveBeenCalledWith("auth", "findUserByLoginId", {
       loginId: "admin01",
     });
@@ -81,14 +73,14 @@ describe("authRepository", () => {
 
   it("findUserById — pool.queryOne을 올바른 인수로 호출한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-    await findUserById("1");
+    await authRepo.findUserById("1");
     expect(pool.queryOne).toHaveBeenCalledWith("auth", "findById", { id: "1" });
   });
 
   it("saveRefreshToken — pool.execute를 올바른 인수로 호출한다", async () => {
     const expiresAt = new Date();
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
-    await saveRefreshToken({
+    await authRepo.saveRefreshToken({
       userId: "1",
       tokenHash: "hash-abc",
       familyId: "fam-uuid-1",
@@ -105,7 +97,7 @@ describe("authRepository", () => {
   it("findRefreshToken — 행을 올바르게 매핑한다", async () => {
     const row = makeRefreshTokenRow();
     vi.mocked(pool.queryOne).mockResolvedValueOnce(row);
-    const result = await findRefreshToken("some-hash");
+    const result = await authRepo.findRefreshToken("some-hash");
     expect(result?.userId).toBe("1");
     expect(result?.familyId).toBe("fam-uuid-1");
     expect(result?.revokedAt).toBeNull();
@@ -114,7 +106,7 @@ describe("authRepository", () => {
 
   it("revokeToken — pool.execute를 올바른 인수로 호출한다", async () => {
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
-    await revokeToken("hash-abc");
+    await authRepo.revokeToken("hash-abc");
     expect(pool.execute).toHaveBeenCalledWith("auth", "revokeToken", {
       tokenHash: "hash-abc",
     });
@@ -122,7 +114,7 @@ describe("authRepository", () => {
 
   it("revokeFamily — pool.execute를 올바른 인수로 호출한다", async () => {
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
-    await revokeFamily("fam-uuid-1");
+    await authRepo.revokeFamily("fam-uuid-1");
     expect(pool.execute).toHaveBeenCalledWith("auth", "revokeFamily", {
       familyId: "fam-uuid-1",
     });
@@ -130,7 +122,7 @@ describe("authRepository", () => {
 
   it("updateLastLoginAt — pool.execute를 올바른 인수로 호출한다", async () => {
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
-    await updateLastLoginAt("1");
+    await authRepo.updateLastLoginAt("1");
     expect(pool.execute).toHaveBeenCalledWith("auth", "updateLastLoginAt", {
       userId: "1",
     });
@@ -146,7 +138,11 @@ describe("authService.register", () => {
       login_id: "admin01",
     });
     await expect(
-      register({ loginId: "admin01", password: "pw", role: "CONSUMER" }),
+      authService.register({
+        loginId: "admin01",
+        password: "pw",
+        role: "CONSUMER",
+      }),
     ).rejects.toThrow("LOGIN_ID_EXISTS");
   });
 
@@ -159,7 +155,7 @@ describe("authService.register", () => {
       created_at: new Date(),
     });
 
-    const result = await register({
+    const result = await authService.register({
       loginId: "farmer01",
       password: "pw",
       role: "FARMER",
@@ -188,7 +184,7 @@ describe("authService.register", () => {
       created_at: new Date(),
     });
 
-    const result = await register({
+    const result = await authService.register({
       loginId: "consumer01",
       password: "pw",
       role: "CONSUMER",
@@ -202,9 +198,9 @@ describe("authService.login", () => {
 
   it("loginId가 없으면 INVALID_CREDENTIALS를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-    await expect(login({ loginId: "nobody", password: "pw" })).rejects.toThrow(
-      "INVALID_CREDENTIALS",
-    );
+    await expect(
+      authService.login({ loginId: "nobody", password: "pw" }),
+    ).rejects.toThrow("INVALID_CREDENTIALS");
   });
 
   it("비밀번호가 틀리면 INVALID_CREDENTIALS를 throw한다", async () => {
@@ -217,7 +213,7 @@ describe("authService.login", () => {
     });
     vi.mocked(hash.comparePassword).mockResolvedValueOnce(false);
     await expect(
-      login({ loginId: "admin01", password: "wrong" }),
+      authService.login({ loginId: "admin01", password: "wrong" }),
     ).rejects.toThrow("INVALID_CREDENTIALS");
   });
 
@@ -231,7 +227,7 @@ describe("authService.login", () => {
     });
     vi.mocked(hash.comparePassword).mockResolvedValueOnce(true);
     await expect(
-      login({ loginId: "farmer01", password: "pw" }),
+      authService.login({ loginId: "farmer01", password: "pw" }),
     ).rejects.toThrow("ACCOUNT_NOT_ACTIVE");
   });
 
@@ -249,7 +245,10 @@ describe("authService.login", () => {
       .mockResolvedValueOnce(1); // saveRefreshToken
     vi.mocked(hash.comparePassword).mockResolvedValueOnce(true);
 
-    const result = await login({ loginId: "admin01", password: "pw" });
+    const result = await authService.login({
+      loginId: "admin01",
+      password: "pw",
+    });
 
     expect(result.accessToken).toBe("mock-access-token");
     expect(result.refreshToken).toMatch(/^[0-9a-f]+$/);
@@ -263,7 +262,7 @@ describe("authService.refresh", () => {
 
   it("토큰이 없으면 INVALID_REFRESH_TOKEN을 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-    await expect(refresh("unknown-token")).rejects.toThrow(
+    await expect(authService.refresh("unknown-token")).rejects.toThrow(
       "INVALID_REFRESH_TOKEN",
     );
   });
@@ -274,7 +273,7 @@ describe("authService.refresh", () => {
     );
     vi.mocked(pool.execute).mockResolvedValueOnce(1); // revokeFamily
 
-    await expect(refresh("revoked-token")).rejects.toThrow(
+    await expect(authService.refresh("revoked-token")).rejects.toThrow(
       "REFRESH_TOKEN_REUSE",
     );
     expect(pool.execute).toHaveBeenCalledWith("auth", "revokeFamily", {
@@ -286,7 +285,7 @@ describe("authService.refresh", () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(
       makeRefreshTokenRow({ expires_at: new Date(Date.now() - 1000) }),
     );
-    await expect(refresh("expired-token")).rejects.toThrow(
+    await expect(authService.refresh("expired-token")).rejects.toThrow(
       "REFRESH_TOKEN_EXPIRED",
     );
   });
@@ -295,7 +294,7 @@ describe("authService.refresh", () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(
       makeRefreshTokenRow({ status: "PENDING" }),
     );
-    await expect(refresh("inactive-token")).rejects.toThrow(
+    await expect(authService.refresh("inactive-token")).rejects.toThrow(
       "ACCOUNT_NOT_ACTIVE",
     );
   });
@@ -306,7 +305,7 @@ describe("authService.refresh", () => {
       .mockResolvedValueOnce(1) // revokeToken
       .mockResolvedValueOnce(1); // saveRefreshToken
 
-    const result = await refresh("valid-raw-token");
+    const result = await authService.refresh("valid-raw-token");
 
     expect(result.accessToken).toBe("mock-access-token");
     expect(result.refreshToken).toMatch(/^[0-9a-f]+$/);
@@ -325,7 +324,7 @@ describe("authService.logout", () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(makeRefreshTokenRow());
     vi.mocked(pool.execute).mockResolvedValueOnce(1);
 
-    await logout("valid-raw-token");
+    await authService.logout("valid-raw-token");
 
     expect(pool.execute).toHaveBeenCalledWith("auth", "revokeFamily", {
       familyId: "fam-uuid-1",
@@ -334,7 +333,7 @@ describe("authService.logout", () => {
 
   it("토큰이 존재하지 않으면 아무것도 하지 않는다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
-    await logout("nonexistent-token");
+    await authService.logout("nonexistent-token");
     expect(pool.execute).not.toHaveBeenCalled();
   });
 });

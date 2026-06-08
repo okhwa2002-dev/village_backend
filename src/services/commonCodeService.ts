@@ -1,13 +1,4 @@
-import {
-  createCode,
-  createGroup,
-  findAllGroups,
-  findCodesByGroupId,
-  softDeleteCode,
-  softDeleteGroup,
-  updateCode,
-  updateGroup,
-} from "../repositories/commonCodeRepository";
+import commonCodeRepo from "../repositories/commonCodeRepository";
 import {
   CreateCodeDto,
   CreateGroupDto,
@@ -15,30 +6,31 @@ import {
   UpdateGroupDto,
 } from "../types/commonCodeTypes";
 
-export const getGroups = () => findAllGroups();
+const getGroups = () => commonCodeRepo.findAllGroups();
 
-export const addGroup = (dto: CreateGroupDto) =>
-  createGroup({
+const addGroup = (dto: CreateGroupDto) =>
+  commonCodeRepo.createGroup({
     code: dto.code,
     name: dto.name,
     description: dto.description ?? null,
     useYn: dto.useYn ?? "Y",
   });
 
-export const editGroup = (id: string, dto: UpdateGroupDto) =>
-  updateGroup({
+const editGroup = (id: string, dto: UpdateGroupDto) =>
+  commonCodeRepo.updateGroup({
     id,
     name: dto.name,
     description: dto.description ?? null,
     useYn: dto.useYn,
   });
 
-export const removeGroup = (id: string) => softDeleteGroup(id);
+const removeGroup = (id: string) => commonCodeRepo.softDeleteGroup(id);
 
-export const getCodes = (groupId: string) => findCodesByGroupId(groupId);
+const getCodes = (groupId: string) =>
+  commonCodeRepo.findCodesByGroupId(groupId);
 
-export const addCode = (groupId: string, dto: CreateCodeDto) =>
-  createCode({
+const addCode = (groupId: string, dto: CreateCodeDto) =>
+  commonCodeRepo.createCode({
     groupId,
     code: dto.code,
     name: dto.name,
@@ -47,8 +39,8 @@ export const addCode = (groupId: string, dto: CreateCodeDto) =>
     useYn: dto.useYn ?? "Y",
   });
 
-export const editCode = (id: string, dto: UpdateCodeDto) =>
-  updateCode({
+const editCode = (id: string, dto: UpdateCodeDto) =>
+  commonCodeRepo.updateCode({
     id,
     name: dto.name,
     extraValue: dto.extraValue ?? null,
@@ -56,4 +48,15 @@ export const editCode = (id: string, dto: UpdateCodeDto) =>
     useYn: dto.useYn,
   });
 
-export const removeCode = (id: string) => softDeleteCode(id);
+const removeCode = (id: string) => commonCodeRepo.softDeleteCode(id);
+
+export default {
+  getGroups,
+  addGroup,
+  editGroup,
+  removeGroup,
+  getCodes,
+  addCode,
+  editCode,
+  removeCode,
+};

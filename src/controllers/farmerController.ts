@@ -1,15 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { UpsertFarmerProfileDto, FarmerProfile } from "../types/farmerTypes";
-import {
-  getFarmers,
-  getFarmerById,
-  getMyProfile,
-  upsertProfile,
-  getFarmersForAdmin,
-  exportFarmers,
-  approveFarmer,
-  rejectFarmer,
-} from "../services/farmerService";
+import farmerService from "../services/farmerService";
 import {
   successResponse,
   errorResponse,
@@ -18,7 +9,7 @@ import {
 import { generateExcel } from "../utils/excel";
 
 const getFarmersHandler = async (_req: FastifyRequest, reply: FastifyReply) => {
-  const farmers = await getFarmers();
+  const farmers = await farmerService.getFarmers();
   return reply.send(successResponse(farmers));
 };
 
@@ -27,7 +18,7 @@ const getFarmerHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const farmer = await getFarmerById(req.params.id);
+    const farmer = await farmerService.getFarmerById(req.params.id);
     return reply.send(successResponse(farmer));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "FARMER_NOT_FOUND")
@@ -42,7 +33,7 @@ const getMyProfileHandler = async (
 ) => {
   try {
     const user = req.user;
-    const profile = await getMyProfile(user.id);
+    const profile = await farmerService.getMyProfile(user.id);
     return reply.send(successResponse(profile));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "PROFILE_NOT_FOUND")
@@ -56,7 +47,7 @@ const upsertProfileHandler = async (
   reply: FastifyReply,
 ) => {
   const user = req.user;
-  const profile = await upsertProfile(user.id, req.body);
+  const profile = await farmerService.upsertProfile(user.id, req.body);
   return reply.send(successResponse(profile, "프로필이 저장되었습니다"));
 };
 
@@ -67,7 +58,7 @@ const getFarmersAdminHandler = async (
   const qs = req.query as { page?: string; limit?: string };
   const page = Math.max(1, Number(qs.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(qs.limit) || 20));
-  const result = await getFarmersForAdmin(page, limit);
+  const result = await farmerService.getFarmersForAdmin(page, limit);
   return reply.send(paginatedResponse(result));
 };
 
@@ -75,7 +66,7 @@ const exportFarmersHandler = async (
   _req: FastifyRequest,
   reply: FastifyReply,
 ) => {
-  const farmers = await exportFarmers();
+  const farmers = await farmerService.exportFarmers();
   const buffer = await generateExcel<FarmerProfile>({
     title: "농민 관리 목록",
     sheetName: "농민목록",
@@ -117,7 +108,7 @@ const approveFarmerHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    await approveFarmer(req.params.id);
+    await farmerService.approveFarmer(req.params.id);
     return reply.send(successResponse(null, "농민이 승인되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "FARMER_NOT_FOUND")
@@ -131,7 +122,7 @@ const rejectFarmerHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    await rejectFarmer(req.params.id);
+    await farmerService.rejectFarmer(req.params.id);
     return reply.send(successResponse(null, "농민이 거절되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "FARMER_NOT_FOUND")

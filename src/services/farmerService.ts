@@ -1,34 +1,22 @@
-import {
-  findAllFarmers,
-  findFarmerById,
-  findFarmerByUserId,
-  createFarmerProfile,
-  updateFarmerProfile,
-  findAllFarmersForAdmin,
-  findAllFarmersForExport,
-  updateFarmerUserStatus,
-} from "../repositories/farmerRepository";
+import farmerRepo from "../repositories/farmerRepository";
 import { UpsertFarmerProfileDto } from "../types/farmerTypes";
 
-export const getFarmers = () => findAllFarmers();
+const getFarmers = () => farmerRepo.findAllFarmers();
 
-export const getFarmerById = async (id: string) => {
-  const farmer = await findFarmerById(id);
+const getFarmerById = async (id: string) => {
+  const farmer = await farmerRepo.findFarmerById(id);
   if (!farmer) throw new Error("FARMER_NOT_FOUND");
   return farmer;
 };
 
-export const getMyProfile = async (userId: string) => {
-  const profile = await findFarmerByUserId(userId);
+const getMyProfile = async (userId: string) => {
+  const profile = await farmerRepo.findFarmerByUserId(userId);
   if (!profile) throw new Error("PROFILE_NOT_FOUND");
   return profile;
 };
 
-export const upsertProfile = async (
-  userId: string,
-  dto: UpsertFarmerProfileDto,
-) => {
-  const existing = await findFarmerByUserId(userId);
+const upsertProfile = async (userId: string, dto: UpsertFarmerProfileDto) => {
+  const existing = await farmerRepo.findFarmerByUserId(userId);
   const params = {
     userId,
     name: dto.name,
@@ -36,22 +24,35 @@ export const upsertProfile = async (
     fileGroupId: dto.fileGroupId,
     farmDescription: dto.farmDescription,
   };
-  return existing ? updateFarmerProfile(params) : createFarmerProfile(params);
+  return existing
+    ? farmerRepo.updateFarmerProfile(params)
+    : farmerRepo.createFarmerProfile(params);
 };
 
-export const getFarmersForAdmin = (page: number, limit: number) =>
-  findAllFarmersForAdmin(page, limit);
+const getFarmersForAdmin = (page: number, limit: number) =>
+  farmerRepo.findAllFarmersForAdmin(page, limit);
 
-export const exportFarmers = () => findAllFarmersForExport();
+const exportFarmers = () => farmerRepo.findAllFarmersForExport();
 
-export const approveFarmer = async (farmerId: string) => {
-  const farmer = await findFarmerById(farmerId);
+const approveFarmer = async (farmerId: string) => {
+  const farmer = await farmerRepo.findFarmerById(farmerId);
   if (!farmer) throw new Error("FARMER_NOT_FOUND");
-  await updateFarmerUserStatus(farmer.userId, "ACTIVE");
+  await farmerRepo.updateFarmerUserStatus(farmer.userId, "ACTIVE");
 };
 
-export const rejectFarmer = async (farmerId: string) => {
-  const farmer = await findFarmerById(farmerId);
+const rejectFarmer = async (farmerId: string) => {
+  const farmer = await farmerRepo.findFarmerById(farmerId);
   if (!farmer) throw new Error("FARMER_NOT_FOUND");
-  await updateFarmerUserStatus(farmer.userId, "INACTIVE");
+  await farmerRepo.updateFarmerUserStatus(farmer.userId, "INACTIVE");
+};
+
+export default {
+  getFarmers,
+  getFarmerById,
+  getMyProfile,
+  upsertProfile,
+  getFarmersForAdmin,
+  exportFarmers,
+  approveFarmer,
+  rejectFarmer,
 };

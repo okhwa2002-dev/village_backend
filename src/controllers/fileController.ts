@@ -1,12 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { FileRefType, PatchFileDto } from "../types/fileTypes";
-import {
-  createGroup,
-  uploadFiles,
-  getFilesByGroup,
-  patchFile,
-  removeFileById,
-} from "../services/fileService";
+import fileService from "../services/fileService";
 import {
   parseMultipartWithFiles,
   toNumberOrDefault,
@@ -18,7 +12,7 @@ const createFileGroupHandler = async (
   reply: FastifyReply,
 ) => {
   const user = req.user;
-  const group = await createGroup(req.body.refType, user.id);
+  const group = await fileService.createGroup(req.body.refType, user.id);
   return reply
     .code(201)
     .send(successResponse(group, "파일 그룹이 생성되었습니다"));
@@ -44,7 +38,7 @@ const uploadFileHandler = async (req: FastifyRequest, reply: FastifyReply) => {
           ? 0
           : undefined;
 
-    const result = await uploadFiles({
+    const result = await fileService.uploadFiles({
       fileGroupId: fields.fileGroupId,
       files,
       mainIndex,
@@ -78,7 +72,7 @@ const getFilesHandler = async (
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ) => {
-  const files = await getFilesByGroup(req.params.id);
+  const files = await fileService.getFilesByGroup(req.params.id);
   return reply.send(successResponse(files));
 };
 
@@ -88,7 +82,7 @@ const patchFileHandler = async (
 ) => {
   try {
     const user = req.user;
-    const file = await patchFile({
+    const file = await fileService.patchFile({
       id: req.params.id,
       sortOrder: req.body.sortOrder,
       isMainYn: req.body.isMainYn,
@@ -109,7 +103,7 @@ const deleteFileHandler = async (
 ) => {
   try {
     const user = req.user;
-    await removeFileById(req.params.id, user.id);
+    await fileService.removeFileById(req.params.id, user.id);
     return reply.send(successResponse(null, "파일이 삭제되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "FILE_NOT_FOUND") {

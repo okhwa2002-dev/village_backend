@@ -16,7 +16,7 @@ const toProduct = (row: any): Product => ({
   farmerUserId: row.farmer_user_id ?? undefined,
 });
 
-export const findAllProducts = async (params: {
+const findAllProducts = async (params: {
   category?: string;
   farmerId?: string;
 }): Promise<Product[]> => {
@@ -24,19 +24,17 @@ export const findAllProducts = async (params: {
   return rows.map(toProduct);
 };
 
-export const findProductById = async (id: string): Promise<Product | null> => {
+const findProductById = async (id: string): Promise<Product | null> => {
   const row = await queryOne<any>("product", "findById", { id });
   return row ? toProduct(row) : null;
 };
 
-export const findProductsByFarmerId = async (
-  farmerId: string,
-): Promise<Product[]> => {
+const findProductsByFarmerId = async (farmerId: string): Promise<Product[]> => {
   const rows = await query<any>("product", "findByFarmerId", { farmerId });
   return rows.map(toProduct);
 };
 
-export const createProduct = async (params: {
+const createProduct = async (params: {
   farmerId: string;
   name: string;
   description?: string;
@@ -50,7 +48,7 @@ export const createProduct = async (params: {
   return row ? toProduct(row) : null;
 };
 
-export const updateProduct = async (params: {
+const updateProduct = async (params: {
   id: string;
   farmerId: string;
   name?: string;
@@ -65,10 +63,18 @@ export const updateProduct = async (params: {
   return row ? toProduct(row) : null;
 };
 
-export const deleteProduct = (id: string, farmerId: string): Promise<number> =>
+const deleteProduct = (id: string, farmerId: string): Promise<number> =>
   execute("product", "delete", { id, farmerId });
 
-export const decreaseProductStock = (
-  id: string,
-  quantity: number,
-): Promise<number> => execute("product", "decreaseStock", { id, quantity });
+const decreaseProductStock = (id: string, quantity: number): Promise<number> =>
+  execute("product", "decreaseStock", { id, quantity });
+
+export default {
+  findAllProducts,
+  findProductById,
+  findProductsByFarmerId,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  decreaseProductStock,
+};

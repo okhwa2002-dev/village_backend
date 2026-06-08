@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
-import { register, login, refresh, logout } from "../services/authService";
+import authService from "../services/authService";
 import { successResponse, errorResponse } from "../utils/response";
 
 const registerHandler = async (
@@ -8,7 +8,7 @@ const registerHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const user = await register(req.body);
+    const user = await authService.register(req.body);
     return reply
       .code(201)
       .send(successResponse(user, "회원가입이 완료되었습니다"));
@@ -24,7 +24,7 @@ const loginHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const result = await login(req.body);
+    const result = await authService.login(req.body);
     return reply.send(successResponse(result, "로그인되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -50,7 +50,7 @@ const refreshHandler = async (
   reply: FastifyReply,
 ) => {
   try {
-    const result = await refresh(req.body.refreshToken);
+    const result = await authService.refresh(req.body.refreshToken);
     return reply.send(successResponse(result, "토큰이 갱신되었습니다"));
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -80,7 +80,7 @@ const logoutHandler = async (
   req: FastifyRequest<{ Body: RefreshDto }>,
   reply: FastifyReply,
 ) => {
-  await logout(req.body.refreshToken);
+  await authService.logout(req.body.refreshToken);
   return reply.send(successResponse(null, "로그아웃되었습니다"));
 };
 

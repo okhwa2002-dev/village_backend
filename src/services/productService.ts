@@ -1,37 +1,27 @@
-import {
-  findAllProducts,
-  findProductById,
-  findProductsByFarmerId,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "../repositories/productRepository";
-import { findFarmerByUserId } from "../repositories/farmerRepository";
+import productRepo from "../repositories/productRepository";
+import farmerRepo from "../repositories/farmerRepository";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
 
-export const getProducts = (category?: string, farmerId?: string) =>
-  findAllProducts({ category, farmerId });
+const getProducts = (category?: string, farmerId?: string) =>
+  productRepo.findAllProducts({ category, farmerId });
 
-export const getProductById = async (id: string) => {
-  const product = await findProductById(id);
+const getProductById = async (id: string) => {
+  const product = await productRepo.findProductById(id);
   if (!product) throw new Error("PRODUCT_NOT_FOUND");
   return product;
 };
 
-export const getMyProducts = async (userId: string) => {
-  const profile = await findFarmerByUserId(userId);
+const getMyProducts = async (userId: string) => {
+  const profile = await farmerRepo.findFarmerByUserId(userId);
   if (!profile) throw new Error("PROFILE_NOT_FOUND");
-  return findProductsByFarmerId(profile.id);
+  return productRepo.findProductsByFarmerId(profile.id);
 };
 
-export const createProductByFarmer = async (
-  userId: string,
-  dto: CreateProductDto,
-) => {
-  const profile = await findFarmerByUserId(userId);
+const createProductByFarmer = async (userId: string, dto: CreateProductDto) => {
+  const profile = await farmerRepo.findFarmerByUserId(userId);
   if (!profile) throw new Error("PROFILE_NOT_FOUND");
 
-  return createProduct({
+  return productRepo.createProduct({
     farmerId: profile.id,
     name: dto.name,
     description: dto.description,
@@ -43,15 +33,15 @@ export const createProductByFarmer = async (
   });
 };
 
-export const updateProductByFarmer = async (
+const updateProductByFarmer = async (
   userId: string,
   productId: string,
   dto: UpdateProductDto,
 ) => {
-  const profile = await findFarmerByUserId(userId);
+  const profile = await farmerRepo.findFarmerByUserId(userId);
   if (!profile) throw new Error("PROFILE_NOT_FOUND");
 
-  const product = await updateProduct({
+  const product = await productRepo.updateProduct({
     id: productId,
     farmerId: profile.id,
     name: dto.name,
@@ -66,13 +56,19 @@ export const updateProductByFarmer = async (
   return product;
 };
 
-export const deleteProductByFarmer = async (
-  userId: string,
-  productId: string,
-) => {
-  const profile = await findFarmerByUserId(userId);
+const deleteProductByFarmer = async (userId: string, productId: string) => {
+  const profile = await farmerRepo.findFarmerByUserId(userId);
   if (!profile) throw new Error("PROFILE_NOT_FOUND");
 
-  const count = await deleteProduct(productId, profile.id);
+  const count = await productRepo.deleteProduct(productId, profile.id);
   if (count === 0) throw new Error("PRODUCT_NOT_FOUND");
+};
+
+export default {
+  getProducts,
+  getProductById,
+  getMyProducts,
+  createProductByFarmer,
+  updateProductByFarmer,
+  deleteProductByFarmer,
 };

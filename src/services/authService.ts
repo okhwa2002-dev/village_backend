@@ -3,15 +3,7 @@ import jwt from "jsonwebtoken";
 import { RegisterDto, LoginDto } from "../types/userTypes";
 import { UserRole } from "../types/commonTypes";
 import { hashPassword, comparePassword } from "../utils/hash";
-import {
-  findUserByLoginId,
-  createUser,
-  updateLastLoginAt,
-  saveRefreshToken,
-  findRefreshToken,
-  revokeToken,
-  revokeFamily,
-} from "../repositories/authRepository";
+import authRepo from "../repositories/authRepository";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "15m";
@@ -48,14 +40,14 @@ const getRefreshExpiresAt = (): Date => {
   return d;
 };
 
-export const register = async (dto: RegisterDto) => {
-  const existing = await findUserByLoginId(dto.loginId);
+const register = async (dto: RegisterDto) => {
+  const existing = await authRepo.findUserByLoginId(dto.loginId);
   if (existing) throw new Error("LOGIN_ID_EXISTS");
 
   const hashed = await hashPassword(dto.password);
   const status = dto.role === "FARMER" ? "PENDING" : "ACTIVE";
 
-  return createUser({
+  return authRepo.createUser({
     loginId: dto.loginId,
     password: hashed,
     role: dto.role,
@@ -66,8 +58,8 @@ export const register = async (dto: RegisterDto) => {
   });
 };
 
-export const login = async (dto: LoginDto): Promise<LoginResult> => {
-  const user = await findUserByLoginId(dto.loginId);
+const login = async (dto: LoginDto): Promise<LoginResult> => {
+  const user = await authRepo.findUserByLoginId(dto.loginId);
   if (!user) throw new Error("INVALID_CREDENTIALS");
 
   const { password: hash, ...safeUser } = user;
@@ -77,7 +69,7 @@ export const login = async (dto: LoginDto): Promise<LoginResult> => {
   if (safeUser.status !== "ACTIVE") throw new Error("ACCOUNT_NOT_ACTIVE");
 
   try {
-    await updateLastLoginAt(safeUser.id);
+    await authRepo.updateLastLoginAt(safeUser.id);
   } catch {
     // best-effort
   }
@@ -86,7 +78,7 @@ export const login = async (dto: LoginDto): Promise<LoginResult> => {
   const { raw: refreshToken, hash: tokenHash } = generateRefreshToken();
   const familyId = randomUUID();
 
-  await saveRefreshToken({
+  await authRepo.saveRefreshToken({
     userId: safeUser.id,
     tokenHash,
     familyId,
@@ -105,27 +97,26 @@ export const login = async (dto: LoginDto): Promise<LoginResult> => {
   };
 };
 
-export const refresh = async (rawToken: string): Promise<TokenPair> => {
+const refresh = async (rawToken: string): Promise<TokenPair> => {
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-  const existing = await findRefreshToken(tokenHash);
+  const existing = await authRepo.findRefreshToken(tokenHash);
 
   if (!existing) throw new Error("INVALID_REFRESH_TOKEN");
 
-  // Reuse detection: 이미 폐기된 토큰 재사용 → 해당 family 전체 폐기
   if (existing.revokedAt !== null) {
-    await revokeFamily(existing.familyId);
+    await authRepo.revokeFamily(existing.familyId);
     throw new Error("REFRESH_TOKEN_REUSE");
   }
 
   if (existing.expiresAt < new Date()) throw new Error("REFRESH_TOKEN_EXPIRED");
   if (existing.status !== "ACTIVE") throw new Error("ACCOUNT_NOT_ACTIVE");
 
-  await revokeToken(tokenHash);
+  await authRepo.revokeToken(tokenHash);
 
   const accessToken = generateAccessToken(existing.userId);
   const { raw: newRefreshToken, hash: newTokenHash } = generateRefreshToken();
 
-  await saveRefreshToken({
+  await authRepo.saveRefreshToken({
     userId: existing.userId,
     tokenHash: newTokenHash,
     familyId: existing.familyId,
@@ -135,10 +126,12 @@ export const refresh = async (rawToken: string): Promise<TokenPair> => {
   return { accessToken, refreshToken: newRefreshToken };
 };
 
-export const logout = async (rawToken: string): Promise<void> => {
+const logout = async (rawToken: string): Promise<void> => {
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-  const existing = await findRefreshToken(tokenHash);
+  const existing = await authRepo.findRefreshToken(tokenHash);
   if (existing) {
-    await revokeFamily(existing.familyId);
+    await authRepo.revokeFamily(existing.familyId);
   }
 };
+
+export default { register, login, refresh, logout };

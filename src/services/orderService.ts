@@ -1,31 +1,22 @@
 import { withTransaction, clientQueryOne } from "../db/pool";
-import {
-  findOrdersByUserId,
-  findOrderById,
-  findOrderItems,
-  findAllOrdersForAdmin,
-  updateOrderStatus,
-  createOrderInTx,
-  createOrderItemInTx,
-  decreaseStockInTx,
-} from "../repositories/orderRepository";
+import orderRepo from "../repositories/orderRepository";
 import { CreateOrderDto } from "../types/orderTypes";
 import { Product } from "../types/productTypes";
 
 const generateOrderNumber = () =>
   `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-export const getMyOrders = (userId: string) => findOrdersByUserId(userId);
+const getMyOrders = (userId: string) => orderRepo.findOrdersByUserId(userId);
 
-export const getOrderById = async (userId: string, orderId: string) => {
-  const order = await findOrderById(orderId);
+const getOrderById = async (userId: string, orderId: string) => {
+  const order = await orderRepo.findOrderById(orderId);
   if (!order) throw new Error("ORDER_NOT_FOUND");
   if (order.userId !== userId) throw new Error("FORBIDDEN");
-  const items = await findOrderItems(orderId);
+  const items = await orderRepo.findOrderItems(orderId);
   return { ...order, items };
 };
 
-export const createOrder = async (userId: string, dto: CreateOrderDto) => {
+const createOrder = async (userId: string, dto: CreateOrderDto) => {
   if (!dto.items || dto.items.length === 0) throw new Error("EMPTY_ORDER");
 
   return withTransaction(async (client) => {
@@ -41,9 +32,7 @@ export const createOrder = async (userId: string, dto: CreateOrderDto) => {
         client,
         "product",
         "findById",
-        {
-          id: item.productId,
-        },
+        { id: item.productId },
       );
       if (!product) throw new Error("PRODUCT_NOT_FOUND");
       if (product.status !== "ACTIVE") throw new Error("PRODUCT_NOT_AVAILABLE");
@@ -57,7 +46,7 @@ export const createOrder = async (userId: string, dto: CreateOrderDto) => {
       });
     }
 
-    const order = await createOrderInTx(client, {
+    const order = await orderRepo.createOrderInTx(client, {
       orderNumber: generateOrderNumber(),
       userId,
       consumerName: dto.consumerName,
@@ -70,30 +59,39 @@ export const createOrder = async (userId: string, dto: CreateOrderDto) => {
     if (!order) throw new Error("ORDER_CREATE_FAILED");
 
     for (const item of itemsWithPrice) {
-      await createOrderItemInTx(client, { orderId: order.id, ...item });
-      await decreaseStockInTx(client, item.productId, item.quantity);
+      await orderRepo.createOrderItemInTx(client, {
+        orderId: order.id,
+        ...item,
+      });
+      await orderRepo.decreaseStockInTx(client, item.productId, item.quantity);
     }
 
     return order;
   });
 };
 
-export const cancelOrder = async (userId: string, orderId: string) => {
-  const order = await findOrderById(orderId);
+const cancelOrder = async (userId: string, orderId: string) => {
+  const order = await orderRepo.findOrderById(orderId);
   if (!order) throw new Error("ORDER_NOT_FOUND");
   if (order.userId !== userId) throw new Error("FORBIDDEN");
   if (!["PENDING", "CONFIRMED"].includes(order.status))
     throw new Error("CANNOT_CANCEL");
-  await updateOrderStatus(orderId, "CANCELLED");
+  await orderRepo.updateOrderStatus(orderId, "CANCELLED");
 };
 
-export const getAllOrdersForAdmin = () => findAllOrdersForAdmin();
+const getAllOrdersForAdmin = () => orderRepo.findAllOrdersForAdmin();
 
-export const updateOrderStatusByAdmin = async (
-  orderId: string,
-  status: string,
-) => {
-  const order = await findOrderById(orderId);
+const updateOrderStatusByAdmin = async (orderId: string, status: string) => {
+  const order = await orderRepo.findOrderById(orderId);
   if (!order) throw new Error("ORDER_NOT_FOUND");
-  await updateOrderStatus(orderId, status);
+  await orderRepo.updateOrderStatus(orderId, status);
+};
+
+export default {
+  getMyOrders,
+  getOrderById,
+  createOrder,
+  cancelOrder,
+  getAllOrdersForAdmin,
+  updateOrderStatusByAdmin,
 };

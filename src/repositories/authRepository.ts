@@ -57,19 +57,17 @@ const toRefreshToken = (row: any): RefreshToken => ({
   status: row.status,
 });
 
-export const findUserByLoginId = async (
-  loginId: string,
-): Promise<User | null> => {
+const findUserByLoginId = async (loginId: string): Promise<User | null> => {
   const row = await queryOne<any>("auth", "findUserByLoginId", { loginId });
   return row ? toUser(row) : null;
 };
 
-export const findUserById = async (id: string): Promise<UserRow | null> => {
+const findUserById = async (id: string): Promise<UserRow | null> => {
   const row = await queryOne<any>("auth", "findById", { id });
   return row ? toUserRow(row) : null;
 };
 
-export const createUser = async (params: {
+const createUser = async (params: {
   loginId: string;
   password: string;
   role: string;
@@ -82,28 +80,40 @@ export const createUser = async (params: {
   return row ? toUserRow(row) : null;
 };
 
-export const updateLastLoginAt = (userId: string): Promise<number> =>
+const updateLastLoginAt = (userId: string): Promise<number> =>
   execute("auth", "updateLastLoginAt", { userId });
 
-export const saveRefreshToken = (params: {
+const saveRefreshToken = (params: {
   userId: string;
   tokenHash: string;
   familyId: string;
   expiresAt: Date;
 }): Promise<number> => execute("auth", "saveRefreshToken", params);
 
-export const findRefreshToken = async (
+const findRefreshToken = async (
   tokenHash: string,
 ): Promise<RefreshToken | null> => {
   const row = await queryOne<any>("auth", "findRefreshToken", { tokenHash });
   return row ? toRefreshToken(row) : null;
 };
 
-export const revokeToken = (tokenHash: string): Promise<number> =>
+const revokeToken = (tokenHash: string): Promise<number> =>
   execute("auth", "revokeToken", { tokenHash });
 
-export const revokeFamily = (familyId: string): Promise<number> =>
+const revokeFamily = (familyId: string): Promise<number> =>
   execute("auth", "revokeFamily", { familyId });
 
-export const revokeAllUserTokens = (userId: string): Promise<number> =>
+const revokeAllUserTokens = (userId: string): Promise<number> =>
   execute("auth", "revokeAllUserTokens", { userId });
+
+export default {
+  findUserByLoginId,
+  findUserById,
+  createUser,
+  updateLastLoginAt,
+  saveRefreshToken,
+  findRefreshToken,
+  revokeToken,
+  revokeFamily,
+  revokeAllUserTokens,
+};

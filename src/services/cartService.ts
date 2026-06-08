@@ -1,46 +1,38 @@
-import {
-  findCartByUserId,
-  createCart,
-  findCartItems,
-  upsertCartItem,
-  updateCartItemQuantity,
-  deleteCartItem,
-  clearCartItems,
-} from "../repositories/cartRepository";
+import cartRepo from "../repositories/cartRepository";
 import { AddCartItemDto, UpdateCartItemDto } from "../types/cartTypes";
 
 const getOrCreateCart = async (userId: string) => {
-  const cart = await findCartByUserId(userId);
+  const cart = await cartRepo.findCartByUserId(userId);
   if (cart) return cart;
-  const created = await createCart(userId);
+  const created = await cartRepo.createCart(userId);
   if (!created) throw new Error("CART_CREATE_FAILED");
   return created;
 };
 
-export const getCart = async (userId: string) => {
+const getCart = async (userId: string) => {
   const cart = await getOrCreateCart(userId);
-  const items = await findCartItems(cart.id);
+  const items = await cartRepo.findCartItems(cart.id);
   return { ...cart, items };
 };
 
-export const addCartItem = async (userId: string, dto: AddCartItemDto) => {
+const addCartItem = async (userId: string, dto: AddCartItemDto) => {
   const cart = await getOrCreateCart(userId);
   if (dto.quantity < 1) throw new Error("INVALID_QUANTITY");
-  return upsertCartItem({
+  return cartRepo.upsertCartItem({
     cartId: cart.id,
     productId: dto.productId,
     quantity: dto.quantity,
   });
 };
 
-export const updateCartItem = async (
+const updateCartItem = async (
   userId: string,
   itemId: string,
   dto: UpdateCartItemDto,
 ) => {
   const cart = await getOrCreateCart(userId);
   if (dto.quantity < 1) throw new Error("INVALID_QUANTITY");
-  const count = await updateCartItemQuantity({
+  const count = await cartRepo.updateCartItemQuantity({
     itemId,
     cartId: cart.id,
     quantity: dto.quantity,
@@ -48,13 +40,21 @@ export const updateCartItem = async (
   if (count === 0) throw new Error("ITEM_NOT_FOUND");
 };
 
-export const removeCartItem = async (userId: string, itemId: string) => {
+const removeCartItem = async (userId: string, itemId: string) => {
   const cart = await getOrCreateCart(userId);
-  const count = await deleteCartItem(itemId, cart.id);
+  const count = await cartRepo.deleteCartItem(itemId, cart.id);
   if (count === 0) throw new Error("ITEM_NOT_FOUND");
 };
 
-export const clearCart = async (userId: string) => {
+const clearCart = async (userId: string) => {
   const cart = await getOrCreateCart(userId);
-  await clearCartItems(cart.id);
+  await cartRepo.clearCartItems(cart.id);
+};
+
+export default {
+  getCart,
+  addCartItem,
+  updateCartItem,
+  removeCartItem,
+  clearCart,
 };
