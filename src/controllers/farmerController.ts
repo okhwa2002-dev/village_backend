@@ -80,6 +80,7 @@ export const exportFarmersHandler = async (
 ) => {
   const farmers = await exportFarmers();
   const buffer = await generateExcel<FarmerProfile>({
+    title: "농민 관리 목록",
     sheetName: "농민목록",
     columns: [
       { header: "이름", key: "name", width: 15 },
