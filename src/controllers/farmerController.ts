@@ -1,11 +1,12 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { UpsertFarmerProfileDto } from "../types/farmerTypes";
+import { UpsertFarmerProfileDto, FarmerProfile } from "../types/farmerTypes";
 import {
   getFarmers,
   getFarmerById,
   getMyProfile,
   upsertProfile,
   getFarmersForAdmin,
+  exportFarmers,
   approveFarmer,
   rejectFarmer,
 } from "../services/farmerService";
@@ -14,6 +15,7 @@ import {
   errorResponse,
   paginatedResponse,
 } from "../utils/response";
+import { generateExcel } from "../utils/excel";
 
 export const getFarmersHandler = async (
   _req: FastifyRequest,
@@ -70,6 +72,46 @@ export const getFarmersAdminHandler = async (
   const limit = Math.min(100, Math.max(1, Number(qs.limit) || 20));
   const result = await getFarmersForAdmin(page, limit);
   return reply.send(paginatedResponse(result));
+};
+
+export const exportFarmersHandler = async (
+  _req: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  const farmers = await exportFarmers();
+  const buffer = await generateExcel<FarmerProfile>({
+    sheetName: "농민목록",
+    columns: [
+      { header: "이름", key: "name", width: 15 },
+      { header: "이메일", key: "email", width: 25 },
+      { header: "소개", key: "bio", width: 30 },
+      { header: "농장소개", key: "farmDescription", width: 30 },
+      { header: "상태", key: "status", width: 12 },
+      { header: "가입일", key: "createdAt", width: 20 },
+    ],
+    data: farmers,
+    rowMapper: (f) => ({
+      name: f.name,
+      email: f.email ?? "",
+      bio: f.bio ?? "",
+      farmDescription: f.farmDescription ?? "",
+      status: f.status ?? "",
+      createdAt: f.createdAt
+        ? new Date(f.createdAt).toLocaleDateString("ko-KR")
+        : "",
+    }),
+  });
+
+  reply
+    .header(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    .header(
+      "Content-Disposition",
+      `attachment; filename="farmers_${Date.now()}.xlsx"`,
+    )
+    .send(buffer);
 };
 
 export const approveFarmerHandler = async (

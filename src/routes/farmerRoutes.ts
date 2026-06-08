@@ -5,6 +5,7 @@ import {
   getMyProfileHandler,
   upsertProfileHandler,
   getFarmersAdminHandler,
+  exportFarmersHandler,
   approveFarmerHandler,
   rejectFarmerHandler,
 } from "../controllers/farmerController";
@@ -82,6 +83,22 @@ export default async function farmerRoutes(app: FastifyInstance) {
       preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS")],
     },
     getFarmersAdminHandler,
+  );
+
+  app.get(
+    "/admin/farmers/export",
+    {
+      schema: {
+        tags: ["Admin"],
+        summary: "농민 목록 엑셀 다운로드",
+        security: [{ bearerAuth: [] }],
+        produces: [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ],
+      },
+      preHandler: [authenticate, checkMenuPermission("ADMIN_FARMERS")],
+    },
+    exportFarmersHandler,
   );
 
   app.patch<{ Params: { id: string } }>(

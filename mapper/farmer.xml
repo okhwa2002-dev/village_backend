@@ -65,6 +65,15 @@
     LIMIT #{limit} OFFSET #{offset}
   </select>
 
+  <select id="findAllForAdminExport">
+    SELECT fp.id, fp.user_id, fp.name, fp.bio, fp.file_group_id, fp.farm_description,
+           u.email, u.status, u.created_at
+    FROM farmer_profiles fp
+    JOIN users u ON u.id = fp.user_id
+    WHERE fp.deleted_at IS NULL
+    ORDER BY u.created_at DESC
+  </select>
+
   <update id="updateUserStatus">
     UPDATE users SET status = #{status} WHERE id = #{userId}
   </update>

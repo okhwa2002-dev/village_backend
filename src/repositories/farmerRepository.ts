@@ -72,6 +72,11 @@ export const findAllFarmersForAdmin = async (
   };
 };
 
+export const findAllFarmersForExport = async (): Promise<FarmerProfile[]> => {
+  const rows = await query<any>("farmer", "findAllForAdminExport");
+  return rows.map(toFarmerProfile);
+};
+
 export const updateFarmerUserStatus = (
   userId: string,
   status: string,

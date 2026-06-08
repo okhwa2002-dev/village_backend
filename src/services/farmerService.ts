@@ -5,6 +5,7 @@ import {
   createFarmerProfile,
   updateFarmerProfile,
   findAllFarmersForAdmin,
+  findAllFarmersForExport,
   updateFarmerUserStatus,
 } from "../repositories/farmerRepository";
 import { UpsertFarmerProfileDto } from "../types/farmerTypes";
@@ -40,6 +41,8 @@ export const upsertProfile = async (
 
 export const getFarmersForAdmin = (page: number, limit: number) =>
   findAllFarmersForAdmin(page, limit);
+
+export const exportFarmers = () => findAllFarmersForExport();
 
 export const approveFarmer = async (farmerId: string) => {
   const farmer = await findFarmerById(farmerId);
