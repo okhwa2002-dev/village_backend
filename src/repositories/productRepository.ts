@@ -16,65 +16,60 @@ const toProduct = (row: any): Product => ({
   farmerUserId: row.farmer_user_id ?? undefined,
 });
 
-const findAllProducts = async (params: {
-  category?: string;
-  farmerId?: string;
-}): Promise<Product[]> => {
-  const rows = await query<any>("product", "findAll", params);
-  return rows.map(toProduct);
+const productRepo = {
+  async findAllProducts(params: {
+    category?: string;
+    farmerId?: string;
+  }): Promise<Product[]> {
+    const rows = await query<any>("product", "findAll", params);
+    return rows.map(toProduct);
+  },
+
+  async findProductById(id: string): Promise<Product | null> {
+    const row = await queryOne<any>("product", "findById", { id });
+    return row ? toProduct(row) : null;
+  },
+
+  async findProductsByFarmerId(farmerId: string): Promise<Product[]> {
+    const rows = await query<any>("product", "findByFarmerId", { farmerId });
+    return rows.map(toProduct);
+  },
+
+  async createProduct(params: {
+    farmerId: string;
+    name: string;
+    description?: string;
+    price: number;
+    stock: number;
+    category: string;
+    fileGroupId?: string;
+    status: string;
+  }): Promise<Product | null> {
+    const row = await queryOne<any>("product", "create", params);
+    return row ? toProduct(row) : null;
+  },
+
+  async updateProduct(params: {
+    id: string;
+    farmerId: string;
+    name?: string;
+    description?: string;
+    price?: number;
+    stock?: number;
+    category?: string;
+    fileGroupId?: string;
+    status?: string;
+  }): Promise<Product | null> {
+    const row = await queryOne<any>("product", "update", params);
+    return row ? toProduct(row) : null;
+  },
+
+  deleteProduct(id: string, farmerId: string): Promise<number> {
+    return execute("product", "delete", { id, farmerId });
+  },
+
+  decreaseProductStock(id: string, quantity: number): Promise<number> {
+    return execute("product", "decreaseStock", { id, quantity });
+  },
 };
-
-const findProductById = async (id: string): Promise<Product | null> => {
-  const row = await queryOne<any>("product", "findById", { id });
-  return row ? toProduct(row) : null;
-};
-
-const findProductsByFarmerId = async (farmerId: string): Promise<Product[]> => {
-  const rows = await query<any>("product", "findByFarmerId", { farmerId });
-  return rows.map(toProduct);
-};
-
-const createProduct = async (params: {
-  farmerId: string;
-  name: string;
-  description?: string;
-  price: number;
-  stock: number;
-  category: string;
-  fileGroupId?: string;
-  status: string;
-}): Promise<Product | null> => {
-  const row = await queryOne<any>("product", "create", params);
-  return row ? toProduct(row) : null;
-};
-
-const updateProduct = async (params: {
-  id: string;
-  farmerId: string;
-  name?: string;
-  description?: string;
-  price?: number;
-  stock?: number;
-  category?: string;
-  fileGroupId?: string;
-  status?: string;
-}): Promise<Product | null> => {
-  const row = await queryOne<any>("product", "update", params);
-  return row ? toProduct(row) : null;
-};
-
-const deleteProduct = (id: string, farmerId: string): Promise<number> =>
-  execute("product", "delete", { id, farmerId });
-
-const decreaseProductStock = (id: string, quantity: number): Promise<number> =>
-  execute("product", "decreaseStock", { id, quantity });
-
-export default {
-  findAllProducts,
-  findProductById,
-  findProductsByFarmerId,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  decreaseProductStock,
-};
+export default productRepo;

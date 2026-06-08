@@ -39,56 +39,52 @@ const groupRows = (rows: any[]): MenuGroup[] => {
   return Array.from(groupMap.values());
 };
 
-const findAllMenus = async (): Promise<MenuGroup[]> => {
-  const rows = await query<any>("menu", "findAllMenus");
-  return groupRows(rows);
-};
+const menuRepo = {
+  async findAllMenus(): Promise<MenuGroup[]> {
+    const rows = await query<any>("menu", "findAllMenus");
+    return groupRows(rows);
+  },
 
-const findPublicMenus = async (): Promise<MenuGroup[]> => {
-  const rows = await query<any>("menu", "findPublicMenus");
-  return groupRows(rows);
-};
+  async findPublicMenus(): Promise<MenuGroup[]> {
+    const rows = await query<any>("menu", "findPublicMenus");
+    return groupRows(rows);
+  },
 
-const createMenu = async (params: {
-  groupId?: string | null;
-  parentId?: string | null;
-  code: string;
-  name: string;
-  path?: string | null;
-  icon?: string | null;
-  description?: string | null;
-  sortOrder: number;
-  useYn: string;
-  visibleYn: string;
-}): Promise<Menu | null> => {
-  const row = await queryOne<any>("menu", "createMenu", params);
-  return row ? toMenu(row) : null;
-};
+  async createMenu(params: {
+    groupId?: string | null;
+    parentId?: string | null;
+    code: string;
+    name: string;
+    path?: string | null;
+    icon?: string | null;
+    description?: string | null;
+    sortOrder: number;
+    useYn: string;
+    visibleYn: string;
+  }): Promise<Menu | null> {
+    const row = await queryOne<any>("menu", "createMenu", params);
+    return row ? toMenu(row) : null;
+  },
 
-const updateMenu = async (params: {
-  id: string;
-  groupId?: string | null;
-  parentId?: string | null;
-  code: string;
-  name: string;
-  path?: string | null;
-  icon?: string | null;
-  description?: string | null;
-  sortOrder: number;
-  useYn: string;
-  visibleYn: string;
-}): Promise<Menu | null> => {
-  const row = await queryOne<any>("menu", "updateMenu", params);
-  return row ? toMenu(row) : null;
-};
+  async updateMenu(params: {
+    id: string;
+    groupId?: string | null;
+    parentId?: string | null;
+    code: string;
+    name: string;
+    path?: string | null;
+    icon?: string | null;
+    description?: string | null;
+    sortOrder: number;
+    useYn: string;
+    visibleYn: string;
+  }): Promise<Menu | null> {
+    const row = await queryOne<any>("menu", "updateMenu", params);
+    return row ? toMenu(row) : null;
+  },
 
-const softDeleteMenuCascade = (id: string): Promise<number> =>
-  execute("menu", "softDeleteMenuCascade", { id });
-
-export default {
-  findAllMenus,
-  findPublicMenus,
-  createMenu,
-  updateMenu,
-  softDeleteMenuCascade,
+  softDeleteMenuCascade(id: string): Promise<number> {
+    return execute("menu", "softDeleteMenuCascade", { id });
+  },
 };
+export default menuRepo;

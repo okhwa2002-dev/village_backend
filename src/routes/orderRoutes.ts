@@ -3,7 +3,7 @@ import orderController from "../controllers/orderController";
 import { CreateOrderDto } from "../types/orderTypes";
 import { authenticate, checkMenuPermission } from "../plugins/authenticate";
 
-export default async function orderRoutes(app: FastifyInstance) {
+const orderRoutes = async (app: FastifyInstance) => {
   const auth = { preHandler: [authenticate] };
 
   app.get(
@@ -16,7 +16,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    orderController.getMyOrdersHandler,
+    orderController.listMine,
   );
 
   app.get<{ Params: { id: string } }>(
@@ -29,7 +29,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    orderController.getOrderHandler,
+    orderController.getById,
   );
 
   app.post<{ Body: CreateOrderDto }>(
@@ -71,7 +71,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    orderController.createOrderHandler,
+    orderController.create,
   );
 
   app.patch<{ Params: { id: string } }>(
@@ -84,7 +84,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    orderController.cancelOrderHandler,
+    orderController.cancel,
   );
 
   app.get(
@@ -97,7 +97,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_ORDER")],
     },
-    orderController.getAdminOrdersHandler,
+    orderController.listAdmin,
   );
 
   app.patch<{ Params: { id: string }; Body: { status: string } }>(
@@ -126,6 +126,7 @@ export default async function orderRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_ORDER", "edit")],
     },
-    orderController.updateOrderStatusHandler,
+    orderController.updateStatus,
   );
-}
+};
+export default orderRoutes;

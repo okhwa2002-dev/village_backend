@@ -2,96 +2,102 @@ import { withTransaction, clientQueryOne } from "../db/pool";
 import orderRepo from "../repositories/orderRepository";
 import { CreateOrderDto } from "../types/orderTypes";
 import { Product } from "../types/productTypes";
+import { Errors } from "../utils/errors";
 
 const generateOrderNumber = () =>
   `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-const getMyOrders = (userId: string) => orderRepo.findOrdersByUserId(userId);
+const orderService = {
+  getMyOrders(userId: string) {
+    return orderRepo.findOrdersByUserId(userId);
+  },
 
-const getOrderById = async (userId: string, orderId: string) => {
-  const order = await orderRepo.findOrderById(orderId);
-  if (!order) throw new Error("ORDER_NOT_FOUND");
-  if (order.userId !== userId) throw new Error("FORBIDDEN");
-  const items = await orderRepo.findOrderItems(orderId);
-  return { ...order, items };
-};
+  async getOrderById(userId: string, orderId: string) {
+    const order = await orderRepo.findOrderById(orderId);
+    if (!order) throw Errors.notFound("주문을 찾을 수 없습니다");
+    if (order.userId !== userId) throw Errors.forbidden();
+    const items = await orderRepo.findOrderItems(orderId);
+    return { ...order, items };
+  },
 
-const createOrder = async (userId: string, dto: CreateOrderDto) => {
-  if (!dto.items || dto.items.length === 0) throw new Error("EMPTY_ORDER");
+  async createOrder(userId: string, dto: CreateOrderDto) {
+    if (!dto.items || dto.items.length === 0)
+      throw Errors.badRequest("주문 상품이 없습니다");
 
-  return withTransaction(async (client) => {
-    let totalPrice = 0;
-    const itemsWithPrice: {
-      productId: string;
-      quantity: number;
-      priceAtOrder: number;
-    }[] = [];
+    return withTransaction(async (client) => {
+      let totalPrice = 0;
+      const itemsWithPrice: {
+        productId: string;
+        quantity: number;
+        priceAtOrder: number;
+      }[] = [];
 
-    for (const item of dto.items) {
-      const product = await clientQueryOne<Product>(
-        client,
-        "product",
-        "findById",
-        { id: item.productId },
-      );
-      if (!product) throw new Error("PRODUCT_NOT_FOUND");
-      if (product.status !== "ACTIVE") throw new Error("PRODUCT_NOT_AVAILABLE");
-      if (product.stock < item.quantity) throw new Error("INSUFFICIENT_STOCK");
+      for (const item of dto.items) {
+        const product = await clientQueryOne<Product>(
+          client,
+          "product",
+          "findById",
+          { id: item.productId },
+        );
+        if (!product) throw Errors.notFound("상품을 찾을 수 없습니다");
+        if (product.status !== "ACTIVE")
+          throw Errors.badRequest("판매 중지된 상품이 포함되어 있습니다");
+        if (product.stock < item.quantity)
+          throw Errors.badRequest("재고가 부족합니다");
 
-      totalPrice += product.price * item.quantity;
-      itemsWithPrice.push({
-        productId: item.productId,
-        quantity: item.quantity,
-        priceAtOrder: product.price,
+        totalPrice += product.price * item.quantity;
+        itemsWithPrice.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          priceAtOrder: product.price,
+        });
+      }
+
+      const order = await orderRepo.createOrderInTx(client, {
+        orderNumber: generateOrderNumber(),
+        userId,
+        consumerName: dto.consumerName,
+        consumerPhone: dto.consumerPhone,
+        consumerEmail: dto.consumerEmail,
+        address: dto.address,
+        memo: dto.memo,
+        totalPrice,
       });
-    }
+      if (!order) throw Errors.internal("주문 생성에 실패했습니다");
 
-    const order = await orderRepo.createOrderInTx(client, {
-      orderNumber: generateOrderNumber(),
-      userId,
-      consumerName: dto.consumerName,
-      consumerPhone: dto.consumerPhone,
-      consumerEmail: dto.consumerEmail,
-      address: dto.address,
-      memo: dto.memo,
-      totalPrice,
+      for (const item of itemsWithPrice) {
+        await orderRepo.createOrderItemInTx(client, {
+          orderId: order.id,
+          ...item,
+        });
+        await orderRepo.decreaseStockInTx(
+          client,
+          item.productId,
+          item.quantity,
+        );
+      }
+
+      return order;
     });
-    if (!order) throw new Error("ORDER_CREATE_FAILED");
+  },
 
-    for (const item of itemsWithPrice) {
-      await orderRepo.createOrderItemInTx(client, {
-        orderId: order.id,
-        ...item,
-      });
-      await orderRepo.decreaseStockInTx(client, item.productId, item.quantity);
-    }
+  async cancelOrder(userId: string, orderId: string) {
+    const order = await orderRepo.findOrderById(orderId);
+    if (!order) throw Errors.notFound("주문을 찾을 수 없습니다");
+    if (order.userId !== userId) throw Errors.forbidden();
+    if (!["PENDING", "CONFIRMED"].includes(order.status))
+      throw Errors.badRequest("취소할 수 없는 주문입니다");
+    await orderRepo.updateOrderStatus(orderId, "CANCELLED");
+  },
 
-    return order;
-  });
+  getAllOrdersForAdmin() {
+    return orderRepo.findAllOrdersForAdmin();
+  },
+
+  async updateOrderStatusByAdmin(orderId: string, status: string) {
+    const order = await orderRepo.findOrderById(orderId);
+    if (!order) throw Errors.notFound("주문을 찾을 수 없습니다");
+    await orderRepo.updateOrderStatus(orderId, status);
+  },
 };
-
-const cancelOrder = async (userId: string, orderId: string) => {
-  const order = await orderRepo.findOrderById(orderId);
-  if (!order) throw new Error("ORDER_NOT_FOUND");
-  if (order.userId !== userId) throw new Error("FORBIDDEN");
-  if (!["PENDING", "CONFIRMED"].includes(order.status))
-    throw new Error("CANNOT_CANCEL");
-  await orderRepo.updateOrderStatus(orderId, "CANCELLED");
-};
-
-const getAllOrdersForAdmin = () => orderRepo.findAllOrdersForAdmin();
-
-const updateOrderStatusByAdmin = async (orderId: string, status: string) => {
-  const order = await orderRepo.findOrderById(orderId);
-  if (!order) throw new Error("ORDER_NOT_FOUND");
-  await orderRepo.updateOrderStatus(orderId, status);
-};
-
-export default {
-  getMyOrders,
-  getOrderById,
-  createOrder,
-  cancelOrder,
-  getAllOrdersForAdmin,
-  updateOrderStatusByAdmin,
-};
+export default orderService;

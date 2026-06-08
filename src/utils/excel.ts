@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { FastifyReply } from "fastify";
 
 export interface ExcelColumn {
   header: string;
@@ -14,9 +15,17 @@ export interface ExcelConfig<T> {
   rowMapper: (item: T) => Record<string, unknown>;
 }
 
+const buildFilename = (title: string): string => {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `${title}_${date}${time}.xlsx`;
+};
+
 export const generateExcel = async <T>(
   config: ExcelConfig<T>,
-): Promise<Buffer> => {
+): Promise<{ buffer: Buffer; filename: string }> => {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
   const colCount = config.columns.length;
@@ -41,12 +50,20 @@ export const generateExcel = async <T>(
   });
   const dateRow = sheet.addRow(
     Array.from({ length: colCount }, (_, i) =>
-      i === colCount - 1 ? `작성일: ${today}` : "",
+      i === 0 ? `작성일: ${today}` : "",
     ),
   );
   sheet.mergeCells(2, 1, 2, colCount);
   dateRow.getCell(1).alignment = { horizontal: "right" };
   dateRow.getCell(1).font = { size: 10, color: { argb: "FF666666" } };
+
+  const thinBorder = { style: "thin" as const };
+  const allBorders = {
+    top: thinBorder,
+    left: thinBorder,
+    bottom: thinBorder,
+    right: thinBorder,
+  };
 
   // Row 3: 컬럼 헤더
   const headerRow = sheet.addRow(config.columns.map((col) => col.header));
@@ -58,12 +75,38 @@ export const generateExcel = async <T>(
   };
   headerRow.alignment = { horizontal: "center" };
   headerRow.height = 20;
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber <= colCount) cell.border = allBorders;
+  });
 
   // Row 4+: 데이터
   for (const item of config.data) {
     const mapped = config.rowMapper(item);
-    sheet.addRow(config.columns.map((col) => mapped[col.key] ?? ""));
+    const dataRow = sheet.addRow(
+      config.columns.map((col) => mapped[col.key] ?? ""),
+    );
+    dataRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      if (colNumber <= colCount) cell.border = allBorders;
+    });
   }
 
-  return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
+  const buffer = (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
+  return { buffer, filename: buildFilename(config.title) };
+};
+
+export const sendExcelReply = (
+  reply: FastifyReply,
+  buffer: Buffer,
+  filename: string,
+): void => {
+  reply
+    .header(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    .header(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    )
+    .send(buffer);
 };

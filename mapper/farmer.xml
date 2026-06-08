@@ -53,6 +53,12 @@
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
     WHERE fp.deleted_at IS NULL
+    <if test="keyword != null and keyword != ''">
+      AND (fp.name LIKE '%' || #{keyword} || '%' OR u.email LIKE '%' || #{keyword} || '%')
+    </if>
+    <if test="status != null and status != ''">
+      AND u.status::text = ANY(string_to_array(#{status}, ','))
+    </if>
   </select>
 
   <select id="findAllForAdmin">
@@ -61,6 +67,12 @@
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
     WHERE fp.deleted_at IS NULL
+    <if test="keyword != null and keyword != ''">
+      AND (fp.name LIKE '%' || #{keyword} || '%' OR u.email LIKE '%' || #{keyword} || '%')
+    </if>
+    <if test="status != null and status != ''">
+      AND u.status::text = ANY(string_to_array(#{status}, ','))
+    </if>
     ORDER BY u.created_at DESC
     LIMIT #{limit} OFFSET #{offset}
   </select>
@@ -71,6 +83,12 @@
     FROM farmer_profiles fp
     JOIN users u ON u.id = fp.user_id
     WHERE fp.deleted_at IS NULL
+    <if test="keyword != null and keyword != ''">
+      AND (fp.name LIKE '%' || #{keyword} || '%' OR u.email LIKE '%' || #{keyword} || '%')
+    </if>
+    <if test="status != null and status != ''">
+      AND u.status::text = ANY(string_to_array(#{status}, ','))
+    </if>
     ORDER BY u.created_at DESC
   </select>
 

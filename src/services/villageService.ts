@@ -5,6 +5,7 @@ import {
   UpdateVillageContentDto,
   VillageContent,
 } from "../types/villageTypes";
+import { Errors } from "../utils/errors";
 
 type UploadableFile = {
   buffer: Buffer;
@@ -42,131 +43,126 @@ const attachFilesToContent = async <T extends VillageContent | null>(
   return contentWithFiles;
 };
 
-const getContents = async () =>
-  attachFilesToContents(await villageRepo.findAllContents());
+const villageService = {
+  async getContents() {
+    return attachFilesToContents(await villageRepo.findAllContents());
+  },
 
-const getContentsBySection = async (section: string) =>
-  attachFilesToContents(await villageRepo.findContentsBySection(section));
+  async getContentsBySection(section: string) {
+    return attachFilesToContents(
+      await villageRepo.findContentsBySection(section),
+    );
+  },
 
-const getContentsForAdmin = async () =>
-  attachFilesToContents(await villageRepo.findAllContentsForAdmin());
+  async getContentsForAdmin() {
+    return attachFilesToContents(await villageRepo.findAllContentsForAdmin());
+  },
 
-const createVillageContent = (dto: CreateVillageContentDto) =>
-  villageRepo
-    .createContent({
+  createVillageContent(dto: CreateVillageContentDto) {
+    return villageRepo
+      .createContent({
+        section: dto.section,
+        title: dto.title,
+        body: dto.body,
+        fileGroupId: dto.fileGroupId,
+        sortOrder: dto.sortOrder ?? 0,
+        publishedYn: dto.publishedYn ?? "N",
+      })
+      .then(attachFilesToContent);
+  },
+
+  async createVillageContentWithFiles(
+    dto: CreateVillageContentDto,
+    options: VillageContentFileOptions,
+  ) {
+    let fileGroupId = dto.fileGroupId;
+
+    if (options.files?.length) {
+      if (!fileGroupId) {
+        const group = await fileService.createGroup("VILLAGE", options.userId);
+        fileGroupId = group.id;
+      }
+
+      await fileService.uploadFiles({
+        fileGroupId,
+        files: options.files,
+        mainIndex: options.mainIndex ?? 0,
+        sortStartOrder: options.sortStartOrder ?? 0,
+        userId: options.userId,
+      });
+    }
+
+    const content = await villageRepo.createContent({
+      section: dto.section,
+      title: dto.title,
+      body: dto.body,
+      fileGroupId,
+      sortOrder: dto.sortOrder ?? 0,
+      publishedYn: dto.publishedYn ?? "N",
+    });
+
+    if (!content) throw Errors.internal("콘텐츠 생성에 실패했습니다");
+    return attachFilesToContent(content);
+  },
+
+  async updateVillageContent(id: string, dto: UpdateVillageContentDto) {
+    const content = await villageRepo.updateContent({
+      id,
       section: dto.section,
       title: dto.title,
       body: dto.body,
       fileGroupId: dto.fileGroupId,
-      sortOrder: dto.sortOrder ?? 0,
-      publishedYn: dto.publishedYn ?? "N",
-    })
-    .then(attachFilesToContent);
+      sortOrder: dto.sortOrder,
+      publishedYn: dto.publishedYn,
+    });
+    if (!content) throw Errors.notFound("콘텐츠를 찾을 수 없습니다");
+    return attachFilesToContent(content);
+  },
 
-const createVillageContentWithFiles = async (
-  dto: CreateVillageContentDto,
-  options: VillageContentFileOptions,
-) => {
-  let fileGroupId = dto.fileGroupId;
+  async updateVillageContentWithFiles(
+    id: string,
+    dto: UpdateVillageContentDto,
+    options: VillageContentFileOptions,
+  ) {
+    const existing = await villageRepo.findContentById(id);
+    if (!existing) throw Errors.notFound("콘텐츠를 찾을 수 없습니다");
 
-  if (options.files?.length) {
-    if (!fileGroupId) {
-      const group = await fileService.createGroup("VILLAGE", options.userId);
-      fileGroupId = group.id;
+    let fileGroupId = dto.fileGroupId ?? existing.fileGroupId ?? undefined;
+
+    if (options.files?.length) {
+      const hadFileGroup = !!fileGroupId;
+
+      if (!fileGroupId) {
+        const group = await fileService.createGroup("VILLAGE", options.userId);
+        fileGroupId = group.id;
+      }
+
+      await fileService.uploadFiles({
+        fileGroupId,
+        files: options.files,
+        mainIndex: options.mainIndex ?? (hadFileGroup ? undefined : 0),
+        sortStartOrder: options.sortStartOrder ?? 0,
+        userId: options.userId,
+      });
     }
 
-    await fileService.uploadFiles({
+    const content = await villageRepo.updateContent({
+      id,
+      section: dto.section,
+      title: dto.title,
+      body: dto.body,
       fileGroupId,
-      files: options.files,
-      mainIndex: options.mainIndex ?? 0,
-      sortStartOrder: options.sortStartOrder ?? 0,
-      userId: options.userId,
+      sortOrder: dto.sortOrder,
+      publishedYn: dto.publishedYn,
     });
-  }
+    if (!content) throw Errors.notFound("콘텐츠를 찾을 수 없습니다");
 
-  const content = await villageRepo.createContent({
-    section: dto.section,
-    title: dto.title,
-    body: dto.body,
-    fileGroupId,
-    sortOrder: dto.sortOrder ?? 0,
-    publishedYn: dto.publishedYn ?? "N",
-  });
+    return attachFilesToContent(content);
+  },
 
-  if (!content) throw new Error("CONTENT_CREATE_FAILED");
-  return attachFilesToContent(content);
+  async deleteVillageContent(id: string) {
+    const count = await villageRepo.deleteContent(id);
+    if (count === 0) throw Errors.notFound("콘텐츠를 찾을 수 없습니다");
+  },
 };
-
-const updateVillageContent = async (
-  id: string,
-  dto: UpdateVillageContentDto,
-) => {
-  const content = await villageRepo.updateContent({
-    id,
-    section: dto.section,
-    title: dto.title,
-    body: dto.body,
-    fileGroupId: dto.fileGroupId,
-    sortOrder: dto.sortOrder,
-    publishedYn: dto.publishedYn,
-  });
-  if (!content) throw new Error("CONTENT_NOT_FOUND");
-  return attachFilesToContent(content);
-};
-
-const updateVillageContentWithFiles = async (
-  id: string,
-  dto: UpdateVillageContentDto,
-  options: VillageContentFileOptions,
-) => {
-  const existing = await villageRepo.findContentById(id);
-  if (!existing) throw new Error("CONTENT_NOT_FOUND");
-
-  let fileGroupId = dto.fileGroupId ?? existing.fileGroupId ?? undefined;
-
-  if (options.files?.length) {
-    const hadFileGroup = !!fileGroupId;
-
-    if (!fileGroupId) {
-      const group = await fileService.createGroup("VILLAGE", options.userId);
-      fileGroupId = group.id;
-    }
-
-    await fileService.uploadFiles({
-      fileGroupId,
-      files: options.files,
-      mainIndex: options.mainIndex ?? (hadFileGroup ? undefined : 0),
-      sortStartOrder: options.sortStartOrder ?? 0,
-      userId: options.userId,
-    });
-  }
-
-  const content = await villageRepo.updateContent({
-    id,
-    section: dto.section,
-    title: dto.title,
-    body: dto.body,
-    fileGroupId,
-    sortOrder: dto.sortOrder,
-    publishedYn: dto.publishedYn,
-  });
-  if (!content) throw new Error("CONTENT_NOT_FOUND");
-
-  return attachFilesToContent(content);
-};
-
-const deleteVillageContent = async (id: string) => {
-  const count = await villageRepo.deleteContent(id);
-  if (count === 0) throw new Error("CONTENT_NOT_FOUND");
-};
-
-export default {
-  getContents,
-  getContentsBySection,
-  getContentsForAdmin,
-  createVillageContent,
-  createVillageContentWithFiles,
-  updateVillageContent,
-  updateVillageContentWithFiles,
-  deleteVillageContent,
-};
+export default villageService;

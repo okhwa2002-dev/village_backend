@@ -21,74 +21,68 @@ const toCode = (row: any): CommonCode => ({
   createdAt: row.created_at,
 });
 
-const findAllGroups = async (): Promise<CommonCodeGroup[]> => {
-  const rows = await query<any>("commonCode", "findAllGroups");
-  return rows.map(toGroup);
+const commonCodeRepo = {
+  async findAllGroups(): Promise<CommonCodeGroup[]> {
+    const rows = await query<any>("commonCode", "findAllGroups");
+    return rows.map(toGroup);
+  },
+
+  async createGroup(params: {
+    code: string;
+    name: string;
+    description?: string | null;
+    useYn: string;
+  }): Promise<CommonCodeGroup | null> {
+    const row = await queryOne<any>("commonCode", "createGroup", params);
+    return row ? toGroup(row) : null;
+  },
+
+  async updateGroup(params: {
+    id: string;
+    name: string;
+    description?: string | null;
+    useYn: string;
+  }): Promise<CommonCodeGroup | null> {
+    const row = await queryOne<any>("commonCode", "updateGroup", params);
+    return row ? toGroup(row) : null;
+  },
+
+  softDeleteGroup(id: string): Promise<number> {
+    return execute("commonCode", "softDeleteGroup", { id });
+  },
+
+  async findCodesByGroupId(groupId: string): Promise<CommonCode[]> {
+    const rows = await query<any>("commonCode", "findCodesByGroupId", {
+      groupId,
+    });
+    return rows.map(toCode);
+  },
+
+  async createCode(params: {
+    groupId: string;
+    code: string;
+    name: string;
+    extraValue?: string | null;
+    sortOrder: number;
+    useYn: string;
+  }): Promise<CommonCode | null> {
+    const row = await queryOne<any>("commonCode", "createCode", params);
+    return row ? toCode(row) : null;
+  },
+
+  async updateCode(params: {
+    id: string;
+    name: string;
+    extraValue?: string | null;
+    sortOrder: number;
+    useYn: string;
+  }): Promise<CommonCode | null> {
+    const row = await queryOne<any>("commonCode", "updateCode", params);
+    return row ? toCode(row) : null;
+  },
+
+  softDeleteCode(id: string): Promise<number> {
+    return execute("commonCode", "softDeleteCode", { id });
+  },
 };
-
-const createGroup = async (params: {
-  code: string;
-  name: string;
-  description?: string | null;
-  useYn: string;
-}): Promise<CommonCodeGroup | null> => {
-  const row = await queryOne<any>("commonCode", "createGroup", params);
-  return row ? toGroup(row) : null;
-};
-
-const updateGroup = async (params: {
-  id: string;
-  name: string;
-  description?: string | null;
-  useYn: string;
-}): Promise<CommonCodeGroup | null> => {
-  const row = await queryOne<any>("commonCode", "updateGroup", params);
-  return row ? toGroup(row) : null;
-};
-
-const softDeleteGroup = (id: string): Promise<number> =>
-  execute("commonCode", "softDeleteGroup", { id });
-
-const findCodesByGroupId = async (groupId: string): Promise<CommonCode[]> => {
-  const rows = await query<any>("commonCode", "findCodesByGroupId", {
-    groupId,
-  });
-  return rows.map(toCode);
-};
-
-const createCode = async (params: {
-  groupId: string;
-  code: string;
-  name: string;
-  extraValue?: string | null;
-  sortOrder: number;
-  useYn: string;
-}): Promise<CommonCode | null> => {
-  const row = await queryOne<any>("commonCode", "createCode", params);
-  return row ? toCode(row) : null;
-};
-
-const updateCode = async (params: {
-  id: string;
-  name: string;
-  extraValue?: string | null;
-  sortOrder: number;
-  useYn: string;
-}): Promise<CommonCode | null> => {
-  const row = await queryOne<any>("commonCode", "updateCode", params);
-  return row ? toCode(row) : null;
-};
-
-const softDeleteCode = (id: string): Promise<number> =>
-  execute("commonCode", "softDeleteCode", { id });
-
-export default {
-  findAllGroups,
-  createGroup,
-  updateGroup,
-  softDeleteGroup,
-  findCodesByGroupId,
-  createCode,
-  updateCode,
-  softDeleteCode,
-};
+export default commonCodeRepo;

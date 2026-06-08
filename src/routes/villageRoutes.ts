@@ -6,17 +6,17 @@ import {
 } from "../types/villageTypes";
 import { authenticate, checkMenuPermission } from "../plugins/authenticate";
 
-export default async function villageRoutes(app: FastifyInstance) {
+const villageRoutes = async (app: FastifyInstance) => {
   app.get(
     "/village",
     { schema: { tags: ["Village"], summary: "마을 콘텐츠 목록" } },
-    villageController.getContentsHandler,
+    villageController.list,
   );
 
   app.get<{ Params: { section: string } }>(
     "/village/:section",
     { schema: { tags: ["Village"], summary: "섹션별 콘텐츠 목록" } },
-    villageController.getContentsBySectionHandler,
+    villageController.listBySection,
   );
 
   app.get(
@@ -29,7 +29,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE")],
     },
-    villageController.getContentsAdminHandler,
+    villageController.listAdmin,
   );
 
   app.post<{ Body: CreateVillageContentDto }>(
@@ -43,7 +43,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
-    villageController.createContentHandler,
+    villageController.create,
   );
 
   app.put<{ Params: { id: string }; Body: UpdateVillageContentDto }>(
@@ -57,7 +57,7 @@ export default async function villageRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate, checkMenuPermission("ADMIN_VILLAGE", "edit")],
     },
-    villageController.updateContentHandler,
+    villageController.update,
   );
 
   app.delete<{ Params: { id: string } }>(
@@ -73,6 +73,7 @@ export default async function villageRoutes(app: FastifyInstance) {
         checkMenuPermission("ADMIN_VILLAGE", "delete"),
       ],
     },
-    villageController.deleteContentHandler,
+    villageController.delete,
   );
-}
+};
+export default villageRoutes;

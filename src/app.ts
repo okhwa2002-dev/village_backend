@@ -40,6 +40,7 @@ export default function buildApp(): FastifyInstance {
 
   app.register(cors, {
     origin: process.env.CORS_ORIGIN || "*",
+    exposedHeaders: ["Content-Disposition"],
   });
 
   app.register(swagger, {

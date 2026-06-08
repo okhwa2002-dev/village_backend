@@ -3,7 +3,7 @@ import cartController from "../controllers/cartController";
 import { AddCartItemDto, UpdateCartItemDto } from "../types/cartTypes";
 import { authenticate } from "../plugins/authenticate";
 
-export default async function cartRoutes(app: FastifyInstance) {
+const cartRoutes = async (app: FastifyInstance) => {
   const auth = { preHandler: [authenticate] };
 
   app.get(
@@ -16,7 +16,7 @@ export default async function cartRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    cartController.getCartHandler,
+    cartController.get,
   );
 
   app.post<{ Body: AddCartItemDto }>(
@@ -37,7 +37,7 @@ export default async function cartRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    cartController.addCartItemHandler,
+    cartController.addItem,
   );
 
   app.patch<{ Params: { itemId: string }; Body: UpdateCartItemDto }>(
@@ -57,7 +57,7 @@ export default async function cartRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    cartController.updateCartItemHandler,
+    cartController.updateItem,
   );
 
   app.delete<{ Params: { itemId: string } }>(
@@ -70,7 +70,7 @@ export default async function cartRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    cartController.removeCartItemHandler,
+    cartController.removeItem,
   );
 
   app.delete(
@@ -83,6 +83,7 @@ export default async function cartRoutes(app: FastifyInstance) {
       },
       ...auth,
     },
-    cartController.clearCartHandler,
+    cartController.clear,
   );
-}
+};
+export default cartRoutes;

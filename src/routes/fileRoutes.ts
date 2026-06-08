@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import fileController from "../controllers/fileController";
 import { authenticate } from "../plugins/authenticate";
 
-export default async function fileRoutes(app: FastifyInstance) {
+const fileRoutes = async (app: FastifyInstance) => {
   app.post<{ Body: { refType: "PRODUCT" | "FARMER" | "VILLAGE" | "BOARD" } }>(
     "/file-groups",
     {
@@ -23,7 +23,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    fileController.createFileGroupHandler,
+    fileController.createGroup,
   );
 
   app.post(
@@ -37,7 +37,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    fileController.uploadFileHandler,
+    fileController.upload,
   );
 
   app.get<{ Params: { id: string } }>(
@@ -48,7 +48,7 @@ export default async function fileRoutes(app: FastifyInstance) {
         summary: "파일 그룹 내 파일 목록 조회",
       },
     },
-    fileController.getFilesHandler,
+    fileController.list,
   );
 
   app.patch<{
@@ -71,7 +71,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    fileController.patchFileHandler,
+    fileController.patch,
   );
 
   app.delete<{ Params: { id: string } }>(
@@ -84,6 +84,7 @@ export default async function fileRoutes(app: FastifyInstance) {
       },
       preHandler: [authenticate],
     },
-    fileController.deleteFileHandler,
+    fileController.delete,
   );
-}
+};
+export default fileRoutes;

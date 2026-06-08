@@ -1,117 +1,87 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { CreateProductDto, UpdateProductDto } from "../types/productTypes";
 import productService from "../services/productService";
-import { successResponse, errorResponse } from "../utils/response";
+import { successResponse } from "../utils/response";
+import { handleError } from "../utils/errors";
 
-const getProductsHandler = async (
-  req: FastifyRequest<{
-    Querystring: { category?: string; farmerId?: string };
-  }>,
-  reply: FastifyReply,
-) => {
-  const products = await productService.getProducts(
-    req.query.category,
-    req.query.farmerId,
-  );
-  return reply.send(successResponse(products));
-};
-
-const getProductHandler = async (
-  req: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply,
-) => {
-  try {
-    const product = await productService.getProductById(req.params.id);
-    return reply.send(successResponse(product));
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message === "PRODUCT_NOT_FOUND")
-      return reply.code(404).send(errorResponse("상품을 찾을 수 없습니다"));
-    throw err;
-  }
-};
-
-const getMyProductsHandler = async (
-  req: FastifyRequest,
-  reply: FastifyReply,
-) => {
-  try {
-    const user = req.user;
-    const products = await productService.getMyProducts(user.id);
+const productController = {
+  async list(
+    req: FastifyRequest<{
+      Querystring: { category?: string; farmerId?: string };
+    }>,
+    reply: FastifyReply,
+  ) {
+    const products = await productService.getProducts(
+      req.query.category,
+      req.query.farmerId,
+    );
     return reply.send(successResponse(products));
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message === "PROFILE_NOT_FOUND")
-      return reply.code(404).send(errorResponse("농민 프로필이 없습니다"));
-    throw err;
-  }
-};
+  },
 
-const createProductHandler = async (
-  req: FastifyRequest<{ Body: CreateProductDto }>,
-  reply: FastifyReply,
-) => {
-  try {
-    const user = req.user;
-    const product = await productService.createProductByFarmer(
-      user.id,
-      req.body,
-    );
-    return reply
-      .code(201)
-      .send(successResponse(product, "상품이 등록되었습니다"));
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message === "PROFILE_NOT_FOUND")
-      return reply.code(404).send(errorResponse("농민 프로필이 없습니다"));
-    throw err;
-  }
-};
-
-const updateProductHandler = async (
-  req: FastifyRequest<{ Params: { id: string }; Body: UpdateProductDto }>,
-  reply: FastifyReply,
-) => {
-  try {
-    const user = req.user;
-    const product = await productService.updateProductByFarmer(
-      user.id,
-      req.params.id,
-      req.body,
-    );
-    return reply.send(successResponse(product, "상품이 수정되었습니다"));
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      if (err.message === "PRODUCT_NOT_FOUND")
-        return reply.code(404).send(errorResponse("상품을 찾을 수 없습니다"));
-      if (err.message === "PROFILE_NOT_FOUND")
-        return reply.code(404).send(errorResponse("농민 프로필이 없습니다"));
+  async getById(
+    req: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      const product = await productService.getProductById(req.params.id);
+      return reply.send(successResponse(product));
+    } catch (err: unknown) {
+      return handleError(err, reply);
     }
-    throw err;
-  }
-};
+  },
 
-const deleteProductHandler = async (
-  req: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply,
-) => {
-  try {
-    const user = req.user;
-    await productService.deleteProductByFarmer(user.id, req.params.id);
-    return reply.send(successResponse(null, "상품이 삭제되었습니다"));
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      if (err.message === "PRODUCT_NOT_FOUND")
-        return reply.code(404).send(errorResponse("상품을 찾을 수 없습니다"));
-      if (err.message === "PROFILE_NOT_FOUND")
-        return reply.code(404).send(errorResponse("농민 프로필이 없습니다"));
+  async listMine(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const products = await productService.getMyProducts(req.user.id);
+      return reply.send(successResponse(products));
+    } catch (err: unknown) {
+      return handleError(err, reply);
     }
-    throw err;
-  }
-};
+  },
 
-export default {
-  getProductsHandler,
-  getProductHandler,
-  getMyProductsHandler,
-  createProductHandler,
-  updateProductHandler,
-  deleteProductHandler,
+  async create(
+    req: FastifyRequest<{ Body: CreateProductDto }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      const product = await productService.createProductByFarmer(
+        req.user.id,
+        req.body,
+      );
+      return reply
+        .code(201)
+        .send(successResponse(product, "상품이 등록되었습니다"));
+    } catch (err: unknown) {
+      return handleError(err, reply);
+    }
+  },
+
+  async update(
+    req: FastifyRequest<{ Params: { id: string }; Body: UpdateProductDto }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      const product = await productService.updateProductByFarmer(
+        req.user.id,
+        req.params.id,
+        req.body,
+      );
+      return reply.send(successResponse(product, "상품이 수정되었습니다"));
+    } catch (err: unknown) {
+      return handleError(err, reply);
+    }
+  },
+
+  async delete(
+    req: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      await productService.deleteProductByFarmer(req.user.id, req.params.id);
+      return reply.send(successResponse(null, "상품이 삭제되었습니다"));
+    } catch (err: unknown) {
+      return handleError(err, reply);
+    }
+  },
 };
+export default productController;

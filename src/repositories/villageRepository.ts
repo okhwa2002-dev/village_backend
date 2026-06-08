@@ -14,62 +14,54 @@ const toVillageContent = (row: any): VillageContent => ({
   files: [],
 });
 
-const findAllContents = async (): Promise<VillageContent[]> => {
-  const rows = await query<any>("village", "findAll");
-  return rows.map(toVillageContent);
-};
+const villageRepo = {
+  async findAllContents(): Promise<VillageContent[]> {
+    const rows = await query<any>("village", "findAll");
+    return rows.map(toVillageContent);
+  },
 
-const findContentsBySection = async (
-  section: string,
-): Promise<VillageContent[]> => {
-  const rows = await query<any>("village", "findBySection", { section });
-  return rows.map(toVillageContent);
-};
+  async findContentsBySection(section: string): Promise<VillageContent[]> {
+    const rows = await query<any>("village", "findBySection", { section });
+    return rows.map(toVillageContent);
+  },
 
-const findAllContentsForAdmin = async (): Promise<VillageContent[]> => {
-  const rows = await query<any>("village", "findAllForAdmin");
-  return rows.map(toVillageContent);
-};
+  async findAllContentsForAdmin(): Promise<VillageContent[]> {
+    const rows = await query<any>("village", "findAllForAdmin");
+    return rows.map(toVillageContent);
+  },
 
-const findContentById = async (id: string): Promise<VillageContent | null> => {
-  const row = await queryOne<any>("village", "findById", { id });
-  return row ? toVillageContent(row) : null;
-};
+  async findContentById(id: string): Promise<VillageContent | null> {
+    const row = await queryOne<any>("village", "findById", { id });
+    return row ? toVillageContent(row) : null;
+  },
 
-const createContent = async (params: {
-  section: string;
-  title: string;
-  body?: string;
-  fileGroupId?: string;
-  sortOrder: number;
-  publishedYn: string;
-}): Promise<VillageContent | null> => {
-  const row = await queryOne<any>("village", "create", params);
-  return row ? toVillageContent(row) : null;
-};
+  async createContent(params: {
+    section: string;
+    title: string;
+    body?: string;
+    fileGroupId?: string;
+    sortOrder: number;
+    publishedYn: string;
+  }): Promise<VillageContent | null> {
+    const row = await queryOne<any>("village", "create", params);
+    return row ? toVillageContent(row) : null;
+  },
 
-const updateContent = async (params: {
-  id: string;
-  section?: string;
-  title?: string;
-  body?: string;
-  fileGroupId?: string;
-  sortOrder?: number;
-  publishedYn?: string;
-}): Promise<VillageContent | null> => {
-  const row = await queryOne<any>("village", "update", params);
-  return row ? toVillageContent(row) : null;
-};
+  async updateContent(params: {
+    id: string;
+    section?: string;
+    title?: string;
+    body?: string;
+    fileGroupId?: string;
+    sortOrder?: number;
+    publishedYn?: string;
+  }): Promise<VillageContent | null> {
+    const row = await queryOne<any>("village", "update", params);
+    return row ? toVillageContent(row) : null;
+  },
 
-const deleteContent = (id: string): Promise<number> =>
-  execute("village", "delete", { id });
-
-export default {
-  findAllContents,
-  findContentsBySection,
-  findAllContentsForAdmin,
-  findContentById,
-  createContent,
-  updateContent,
-  deleteContent,
+  deleteContent(id: string): Promise<number> {
+    return execute("village", "delete", { id });
+  },
 };
+export default villageRepo;

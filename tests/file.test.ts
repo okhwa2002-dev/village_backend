@@ -70,17 +70,17 @@ describe("fileService", () => {
       });
     });
 
-    it("생성 실패 시 FILE_GROUP_CREATE_FAILED 에러를 던진다", async () => {
+    it("생성 실패 시 에러를 던진다", async () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
       await expect(fileService.createGroup("PRODUCT", "10")).rejects.toThrow(
-        "FILE_GROUP_CREATE_FAILED",
+        "파일 그룹 생성에 실패했습니다",
       );
     });
   });
 
   describe("uploadFile", () => {
-    it("그룹이 없으면 FILE_GROUP_NOT_FOUND 에러를 던진다", async () => {
+    it("그룹이 없으면 에러를 던진다", async () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
       await expect(
@@ -94,7 +94,7 @@ describe("fileService", () => {
           sortOrder: 0,
           userId: "1",
         }),
-      ).rejects.toThrow("FILE_GROUP_NOT_FOUND");
+      ).rejects.toThrow("파일 그룹을 찾을 수 없습니다");
     });
 
     it("is_main_yn=Y이면 clearMainYn을 먼저 호출한다", async () => {
@@ -131,12 +131,12 @@ describe("fileService", () => {
   });
 
   describe("patchFile", () => {
-    it("파일이 없으면 FILE_NOT_FOUND 에러를 던진다", async () => {
+    it("파일이 없으면 에러를 던진다", async () => {
       vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
 
       await expect(
         fileService.patchFile({ id: "999", userId: "1" }),
-      ).rejects.toThrow("FILE_NOT_FOUND");
+      ).rejects.toThrow("파일을 찾을 수 없습니다");
     });
   });
 });

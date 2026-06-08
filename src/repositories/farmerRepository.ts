@@ -14,79 +14,78 @@ const toFarmerProfile = (row: any): FarmerProfile => ({
   createdAt: row.created_at ?? undefined,
 });
 
-const findAllFarmers = async (): Promise<FarmerProfile[]> => {
-  const rows = await query<any>("farmer", "findAll");
-  return rows.map(toFarmerProfile);
-};
+const farmerRepo = {
+  async findAllFarmers(): Promise<FarmerProfile[]> {
+    const rows = await query<any>("farmer", "findAll");
+    return rows.map(toFarmerProfile);
+  },
 
-const findFarmerById = async (id: string): Promise<FarmerProfile | null> => {
-  const row = await queryOne<any>("farmer", "findById", { id });
-  return row ? toFarmerProfile(row) : null;
-};
+  async findFarmerById(id: string): Promise<FarmerProfile | null> {
+    const row = await queryOne<any>("farmer", "findById", { id });
+    return row ? toFarmerProfile(row) : null;
+  },
 
-const findFarmerByUserId = async (
-  userId: string,
-): Promise<FarmerProfile | null> => {
-  const row = await queryOne<any>("farmer", "findByUserId", { userId });
-  return row ? toFarmerProfile(row) : null;
-};
+  async findFarmerByUserId(userId: string): Promise<FarmerProfile | null> {
+    const row = await queryOne<any>("farmer", "findByUserId", { userId });
+    return row ? toFarmerProfile(row) : null;
+  },
 
-const createFarmerProfile = async (params: {
-  userId: string;
-  name: string;
-  bio?: string;
-  fileGroupId?: string;
-  farmDescription?: string;
-}): Promise<FarmerProfile | null> => {
-  const row = await queryOne<any>("farmer", "create", params);
-  return row ? toFarmerProfile(row) : null;
-};
+  async createFarmerProfile(params: {
+    userId: string;
+    name: string;
+    bio?: string;
+    fileGroupId?: string;
+    farmDescription?: string;
+  }): Promise<FarmerProfile | null> {
+    const row = await queryOne<any>("farmer", "create", params);
+    return row ? toFarmerProfile(row) : null;
+  },
 
-const updateFarmerProfile = async (params: {
-  userId: string;
-  name?: string;
-  bio?: string;
-  fileGroupId?: string;
-  farmDescription?: string;
-}): Promise<FarmerProfile | null> => {
-  const row = await queryOne<any>("farmer", "update", params);
-  return row ? toFarmerProfile(row) : null;
-};
+  async updateFarmerProfile(params: {
+    userId: string;
+    name?: string;
+    bio?: string;
+    fileGroupId?: string;
+    farmDescription?: string;
+  }): Promise<FarmerProfile | null> {
+    const row = await queryOne<any>("farmer", "update", params);
+    return row ? toFarmerProfile(row) : null;
+  },
 
-const findAllFarmersForAdmin = async (
-  page: number,
-  limit: number,
-): Promise<PaginatedResult<FarmerProfile>> => {
-  const offset = (page - 1) * limit;
-  const [rows, countRows] = await Promise.all([
-    query<any>("farmer", "findAllForAdmin", { limit, offset }),
-    query<any>("farmer", "countForAdmin"),
-  ]);
-  return {
-    items: rows.map(toFarmerProfile),
-    total: Number(countRows[0]?.total ?? 0),
-    page,
-    limit,
-  };
-};
+  async findAllFarmersForAdmin(
+    page: number,
+    limit: number,
+    filters: { keyword?: string | null; status?: string | null } = {},
+  ): Promise<PaginatedResult<FarmerProfile>> {
+    const offset = (page - 1) * limit;
+    const conditions = {
+      keyword: filters.keyword ?? null,
+      status: filters.status ?? null,
+    };
+    const [rows, countRows] = await Promise.all([
+      query<any>("farmer", "findAllForAdmin", { ...conditions, limit, offset }),
+      query<any>("farmer", "countForAdmin", conditions),
+    ]);
+    return {
+      items: rows.map(toFarmerProfile),
+      total: Number(countRows[0]?.total ?? 0),
+      page,
+      limit,
+    };
+  },
 
-const findAllFarmersForExport = async (): Promise<FarmerProfile[]> => {
-  const rows = await query<any>("farmer", "findAllForAdminExport");
-  return rows.map(toFarmerProfile);
-};
+  async findAllFarmersForExport(
+    filters: { keyword?: string | null; status?: string | null } = {},
+  ): Promise<FarmerProfile[]> {
+    const rows = await query<any>("farmer", "findAllForAdminExport", {
+      keyword: filters.keyword ?? null,
+      status: filters.status ?? null,
+    });
+    return rows.map(toFarmerProfile);
+  },
 
-const updateFarmerUserStatus = (
-  userId: string,
-  status: string,
-): Promise<number> => execute("farmer", "updateUserStatus", { userId, status });
-
-export default {
-  findAllFarmers,
-  findFarmerById,
-  findFarmerByUserId,
-  createFarmerProfile,
-  updateFarmerProfile,
-  findAllFarmersForAdmin,
-  findAllFarmersForExport,
-  updateFarmerUserStatus,
+  updateFarmerUserStatus(userId: string, status: string): Promise<number> {
+    return execute("farmer", "updateUserStatus", { userId, status });
+  },
 };
+export default farmerRepo;

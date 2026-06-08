@@ -132,7 +132,7 @@ describe("authRepository", () => {
 describe("authService.register", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("loginId 중복이면 LOGIN_ID_EXISTS를 throw한다", async () => {
+  it("loginId 중복이면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce({
       id: "1",
       login_id: "admin01",
@@ -143,7 +143,7 @@ describe("authService.register", () => {
         password: "pw",
         role: "CONSUMER",
       }),
-    ).rejects.toThrow("LOGIN_ID_EXISTS");
+    ).rejects.toThrow("이미 사용 중인 아이디입니다");
   });
 
   it("farmer 가입 시 status=pending으로 생성된다", async () => {
@@ -196,14 +196,14 @@ describe("authService.register", () => {
 describe("authService.login", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("loginId가 없으면 INVALID_CREDENTIALS를 throw한다", async () => {
+  it("loginId가 없으면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
     await expect(
       authService.login({ loginId: "nobody", password: "pw" }),
-    ).rejects.toThrow("INVALID_CREDENTIALS");
+    ).rejects.toThrow("아이디 또는 비밀번호가 올바르지 않습니다");
   });
 
-  it("비밀번호가 틀리면 INVALID_CREDENTIALS를 throw한다", async () => {
+  it("비밀번호가 틀리면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce({
       id: "1",
       login_id: "admin01",
@@ -214,10 +214,10 @@ describe("authService.login", () => {
     vi.mocked(hash.comparePassword).mockResolvedValueOnce(false);
     await expect(
       authService.login({ loginId: "admin01", password: "wrong" }),
-    ).rejects.toThrow("INVALID_CREDENTIALS");
+    ).rejects.toThrow("아이디 또는 비밀번호가 올바르지 않습니다");
   });
 
-  it("status가 active가 아니면 ACCOUNT_NOT_ACTIVE를 throw한다", async () => {
+  it("status가 active가 아니면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce({
       id: "1",
       login_id: "farmer01",
@@ -228,7 +228,7 @@ describe("authService.login", () => {
     vi.mocked(hash.comparePassword).mockResolvedValueOnce(true);
     await expect(
       authService.login({ loginId: "farmer01", password: "pw" }),
-    ).rejects.toThrow("ACCOUNT_NOT_ACTIVE");
+    ).rejects.toThrow("승인 대기 중인 계정입니다. 관리자 승인 후 로그인하세요");
   });
 
   it("성공 시 accessToken, refreshToken, user를 반환한다", async () => {
@@ -260,42 +260,42 @@ describe("authService.login", () => {
 describe("authService.refresh", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("토큰이 없으면 INVALID_REFRESH_TOKEN을 throw한다", async () => {
+  it("토큰이 없으면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(null);
     await expect(authService.refresh("unknown-token")).rejects.toThrow(
-      "INVALID_REFRESH_TOKEN",
+      "유효하지 않은 토큰입니다",
     );
   });
 
-  it("이미 폐기된 토큰이면 REFRESH_TOKEN_REUSE를 throw하고 패밀리를 폐기한다", async () => {
+  it("이미 폐기된 토큰이면 에러를 throw하고 패밀리를 폐기한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(
       makeRefreshTokenRow({ revoked_at: new Date() }),
     );
     vi.mocked(pool.execute).mockResolvedValueOnce(1); // revokeFamily
 
     await expect(authService.refresh("revoked-token")).rejects.toThrow(
-      "REFRESH_TOKEN_REUSE",
+      "토큰이 탈취되었을 수 있습니다. 다시 로그인하세요",
     );
     expect(pool.execute).toHaveBeenCalledWith("auth", "revokeFamily", {
       familyId: "fam-uuid-1",
     });
   });
 
-  it("만료된 토큰이면 REFRESH_TOKEN_EXPIRED를 throw한다", async () => {
+  it("만료된 토큰이면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(
       makeRefreshTokenRow({ expires_at: new Date(Date.now() - 1000) }),
     );
     await expect(authService.refresh("expired-token")).rejects.toThrow(
-      "REFRESH_TOKEN_EXPIRED",
+      "유효하지 않은 토큰입니다",
     );
   });
 
-  it("비활성 계정이면 ACCOUNT_NOT_ACTIVE를 throw한다", async () => {
+  it("비활성 계정이면 에러를 throw한다", async () => {
     vi.mocked(pool.queryOne).mockResolvedValueOnce(
       makeRefreshTokenRow({ status: "PENDING" }),
     );
     await expect(authService.refresh("inactive-token")).rejects.toThrow(
-      "ACCOUNT_NOT_ACTIVE",
+      "승인 대기 중인 계정입니다. 관리자 승인 후 로그인하세요",
     );
   });
 

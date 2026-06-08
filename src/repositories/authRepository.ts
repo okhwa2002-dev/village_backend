@@ -57,63 +57,58 @@ const toRefreshToken = (row: any): RefreshToken => ({
   status: row.status,
 });
 
-const findUserByLoginId = async (loginId: string): Promise<User | null> => {
-  const row = await queryOne<any>("auth", "findUserByLoginId", { loginId });
-  return row ? toUser(row) : null;
+const authRepo = {
+  async findUserByLoginId(loginId: string): Promise<User | null> {
+    const row = await queryOne<any>("auth", "findUserByLoginId", { loginId });
+    return row ? toUser(row) : null;
+  },
+
+  async findUserById(id: string): Promise<UserRow | null> {
+    const row = await queryOne<any>("auth", "findById", { id });
+    return row ? toUserRow(row) : null;
+  },
+
+  async createUser(params: {
+    loginId: string;
+    password: string;
+    role: string;
+    status: string;
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+  }): Promise<UserRow | null> {
+    const row = await queryOne<any>("auth", "createUser", params);
+    return row ? toUserRow(row) : null;
+  },
+
+  updateLastLoginAt(userId: string): Promise<number> {
+    return execute("auth", "updateLastLoginAt", { userId });
+  },
+
+  saveRefreshToken(params: {
+    userId: string;
+    tokenHash: string;
+    familyId: string;
+    expiresAt: Date;
+  }): Promise<number> {
+    return execute("auth", "saveRefreshToken", params);
+  },
+
+  async findRefreshToken(tokenHash: string): Promise<RefreshToken | null> {
+    const row = await queryOne<any>("auth", "findRefreshToken", { tokenHash });
+    return row ? toRefreshToken(row) : null;
+  },
+
+  revokeToken(tokenHash: string): Promise<number> {
+    return execute("auth", "revokeToken", { tokenHash });
+  },
+
+  revokeFamily(familyId: string): Promise<number> {
+    return execute("auth", "revokeFamily", { familyId });
+  },
+
+  revokeAllUserTokens(userId: string): Promise<number> {
+    return execute("auth", "revokeAllUserTokens", { userId });
+  },
 };
-
-const findUserById = async (id: string): Promise<UserRow | null> => {
-  const row = await queryOne<any>("auth", "findById", { id });
-  return row ? toUserRow(row) : null;
-};
-
-const createUser = async (params: {
-  loginId: string;
-  password: string;
-  role: string;
-  status: string;
-  name?: string | null;
-  phone?: string | null;
-  email?: string | null;
-}): Promise<UserRow | null> => {
-  const row = await queryOne<any>("auth", "createUser", params);
-  return row ? toUserRow(row) : null;
-};
-
-const updateLastLoginAt = (userId: string): Promise<number> =>
-  execute("auth", "updateLastLoginAt", { userId });
-
-const saveRefreshToken = (params: {
-  userId: string;
-  tokenHash: string;
-  familyId: string;
-  expiresAt: Date;
-}): Promise<number> => execute("auth", "saveRefreshToken", params);
-
-const findRefreshToken = async (
-  tokenHash: string,
-): Promise<RefreshToken | null> => {
-  const row = await queryOne<any>("auth", "findRefreshToken", { tokenHash });
-  return row ? toRefreshToken(row) : null;
-};
-
-const revokeToken = (tokenHash: string): Promise<number> =>
-  execute("auth", "revokeToken", { tokenHash });
-
-const revokeFamily = (familyId: string): Promise<number> =>
-  execute("auth", "revokeFamily", { familyId });
-
-const revokeAllUserTokens = (userId: string): Promise<number> =>
-  execute("auth", "revokeAllUserTokens", { userId });
-
-export default {
-  findUserByLoginId,
-  findUserById,
-  createUser,
-  updateLastLoginAt,
-  saveRefreshToken,
-  findRefreshToken,
-  revokeToken,
-  revokeFamily,
-  revokeAllUserTokens,
-};
+export default authRepo;

@@ -3,7 +3,7 @@ import authController from "../controllers/authController";
 import { authenticate } from "../plugins/authenticate";
 import { RegisterDto, LoginDto, RefreshDto } from "../types/userTypes";
 
-export default async function authRoutes(app: FastifyInstance) {
+const authRoutes = async (app: FastifyInstance) => {
   app.post<{ Body: RegisterDto }>(
     "/auth/register",
     {
@@ -24,10 +24,10 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    authController.registerHandler,
+    authController.register,
   );
 
-  app.get("/auth/me", { preHandler: authenticate }, authController.meHandler);
+  app.get("/auth/me", { preHandler: authenticate }, authController.me);
 
   app.post<{ Body: LoginDto }>(
     "/auth/login",
@@ -45,7 +45,7 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    authController.loginHandler,
+    authController.login,
   );
 
   app.post<{ Body: RefreshDto }>(
@@ -63,7 +63,7 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    authController.refreshHandler,
+    authController.refresh,
   );
 
   app.post<{ Body: RefreshDto }>(
@@ -81,6 +81,7 @@ export default async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    authController.logoutHandler,
+    authController.logout,
   );
-}
+};
+export default authRoutes;
