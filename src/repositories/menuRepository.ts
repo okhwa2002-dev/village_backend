@@ -1,5 +1,5 @@
 import { execute, query, queryOne } from "../db/pool";
-import { Menu, MenuGroup } from "../types/menuTypes";
+import { Menu, MenuGroup, MenuGroupSummary } from "../types/menuTypes";
 
 const toMenu = (row: any): Menu => ({
   id: row.id,
@@ -15,6 +15,15 @@ const toMenu = (row: any): Menu => ({
   useYn: row.use_yn,
   visibleYn: row.visible_yn ?? "Y",
   createdAt: row.created_at,
+});
+
+const toMenuGroupSummary = (row: any): MenuGroupSummary => ({
+  id: row.id,
+  code: row.code,
+  name: row.name,
+  icon: row.icon ?? null,
+  sortOrder: row.sort_order,
+  useYn: row.use_yn,
 });
 
 const groupRows = (rows: any[]): MenuGroup[] => {
@@ -81,6 +90,39 @@ const menuRepo = {
   }): Promise<Menu | null> {
     const row = await queryOne<any>("menu", "updateMenu", params);
     return row ? toMenu(row) : null;
+  },
+
+  async createMenuGroup(params: {
+    code: string;
+    name: string;
+    icon?: string | null;
+    sortOrder: number;
+    useYn: string;
+  }): Promise<MenuGroupSummary | null> {
+    const row = await queryOne<any>("menu", "createMenuGroup", params);
+    return row ? toMenuGroupSummary(row) : null;
+  },
+
+  async updateMenuGroup(params: {
+    id: string;
+    code: string;
+    name: string;
+    icon?: string | null;
+    sortOrder: number;
+    useYn: string;
+  }): Promise<MenuGroupSummary | null> {
+    const row = await queryOne<any>("menu", "updateMenuGroup", params);
+    return row ? toMenuGroupSummary(row) : null;
+  },
+
+  async findAllMenuGroups(): Promise<MenuGroupSummary[]> {
+    const rows = await query<any>("menu", "findAllMenuGroups");
+    return rows.map(toMenuGroupSummary);
+  },
+
+  async findMenusByGroupId(groupId: string): Promise<Menu[]> {
+    const rows = await query<any>("menu", "findMenusByGroupId", { groupId });
+    return rows.map(toMenu);
   },
 
   softDeleteMenuCascade(id: string): Promise<number> {

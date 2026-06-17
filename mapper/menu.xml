@@ -55,6 +55,39 @@
     ORDER BY mg.sort_order, m.dept, m.sort_order, m.created_at
   </select>
 
+  <insert id="createMenuGroup">
+    INSERT INTO menu_groups (code, name, icon, sort_order, use_yn)
+    VALUES (#{code}, #{name}, #{icon}, #{sortOrder}, #{useYn})
+    RETURNING id, code, name, icon, sort_order, use_yn
+  </insert>
+
+  <update id="updateMenuGroup">
+    UPDATE menu_groups
+    SET code       = #{code},
+        name       = #{name},
+        icon       = #{icon},
+        sort_order = #{sortOrder},
+        use_yn     = #{useYn},
+        updated_at = NOW()
+    WHERE id = #{id} AND deleted_at IS NULL
+    RETURNING id, code, name, icon, sort_order, use_yn
+  </update>
+
+  <select id="findAllMenuGroups">
+    SELECT id, code, name, icon, sort_order, use_yn
+    FROM menu_groups
+    WHERE deleted_at IS NULL
+    ORDER BY sort_order
+  </select>
+
+  <select id="findMenusByGroupId">
+    SELECT id, group_id, parent_id, code, name, path, icon, dept, description,
+           sort_order, use_yn, visible_yn, created_at
+    FROM menus
+    WHERE group_id = #{groupId} AND deleted_at IS NULL
+    ORDER BY dept, sort_order, created_at
+  </select>
+
   <insert id="createMenu">
     INSERT INTO menus (group_id, parent_id, code, name, path, icon, description, sort_order, use_yn, visible_yn)
     VALUES (#{groupId}, #{parentId}, #{code}, #{name}, #{path}, #{icon}, #{description}, #{sortOrder}, #{useYn}, #{visibleYn})

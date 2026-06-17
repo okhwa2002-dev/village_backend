@@ -24,6 +24,31 @@ export interface MenuGroup {
   menus: Menu[];
 }
 
+export interface MenuGroupSummary {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  sortOrder: number;
+  useYn: string;
+}
+
+export interface CreateMenuGroupDto {
+  code: string;
+  name: string;
+  icon?: string | null;
+  sortOrder?: number;
+  useYn?: string;
+}
+
+export interface UpdateMenuGroupDto {
+  code: string;
+  name: string;
+  icon?: string | null;
+  sortOrder?: number;
+  useYn?: string;
+}
+
 export interface CreateMenuDto {
   groupId?: string | null;
   parentId?: string | null;

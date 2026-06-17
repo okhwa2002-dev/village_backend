@@ -1,5 +1,10 @@
 import menuRepo from "../repositories/menuRepository";
-import { CreateMenuDto, UpdateMenuDto } from "../types/menuTypes";
+import {
+  CreateMenuDto,
+  CreateMenuGroupDto,
+  UpdateMenuDto,
+  UpdateMenuGroupDto,
+} from "../types/menuTypes";
 
 const menuService = {
   getMenus() {
@@ -39,6 +44,35 @@ const menuService = {
       useYn: dto.useYn ?? "Y",
       visibleYn: dto.visibleYn ?? "Y",
     });
+  },
+
+  addMenuGroup(dto: CreateMenuGroupDto) {
+    return menuRepo.createMenuGroup({
+      code: dto.code,
+      name: dto.name,
+      icon: dto.icon ?? null,
+      sortOrder: dto.sortOrder ?? 0,
+      useYn: dto.useYn ?? "Y",
+    });
+  },
+
+  editMenuGroup(id: string, dto: UpdateMenuGroupDto) {
+    return menuRepo.updateMenuGroup({
+      id,
+      code: dto.code,
+      name: dto.name,
+      icon: dto.icon ?? null,
+      sortOrder: dto.sortOrder ?? 0,
+      useYn: dto.useYn ?? "Y",
+    });
+  },
+
+  getMenuGroups() {
+    return menuRepo.findAllMenuGroups();
+  },
+
+  getMenusByGroupId(groupId: string) {
+    return menuRepo.findMenusByGroupId(groupId);
   },
 
   removeMenu(id: string) {
